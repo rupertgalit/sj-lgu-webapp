@@ -1,0 +1,50 @@
+/* You can add global styles to this file, and also import other style files */
+Button {
+    // & .p-button {
+    //     background-color: #527eae;
+    //     color: #fff;
+
+    //     &:hover {
+    //         background-color: #27568f !important;
+    //     }
+    // }
+
+    // &.p-button-text.p-button-secondary {
+    //     background-color: #527eae;
+    //     color: #fff;
+
+    //     &:hover {
+    //         color: #fff !important;
+    //     }
+    // }
+}
+
+.currency {
+    &.deduction input {
+        color: #d75b5b;
+    }
+    &.total input {
+        color: #2d9401;
+    }
+    input {
+        text-align: right;
+    }
+}
+
+.totality {
+    border-color: #6698ad;
+    .p-inputgroup.penalty {
+        color: #e05e5e;
+    }
+
+    &:sticky {
+        color: red;
+    }
+
+    // input {
+    //     padding-top: .2rem;
+    //     padding-bottom: .2rem;
+    // }
+}
+
+$primary-color: #527eae
