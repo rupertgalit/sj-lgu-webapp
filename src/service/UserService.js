@@ -1,8 +1,8 @@
-export const TransactionService = {
-    endpoint: 'transaction',
+export const UserService = {
+    endpoint: 'users',
 
-    async getAllTransaction(length = null, page = 1) {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}${this.endpoint}`, {
+    async getAllUser(length = null, page = 1) {
+        const res = fetch(`${import.meta.env.VITE_API_URL}${this.endpoint}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json'
@@ -16,7 +16,7 @@ export const TransactionService = {
             message: res.statusText
         };
     },
-    async getTransaction(id) {
+    async getUser(id) {
         console.log(id, import.meta.env);
         const res = fetch(`${import.meta.env.VITE_API_URL}${this.endpoint}`, {
             headers: {
@@ -29,7 +29,7 @@ export const TransactionService = {
         console.log(res.status);
     },
 
-    async createTransaction(params) {
+    async createUser(params) {
         const res = fetch(`${import.meta.env.VITE_API_URL}${this.endpoint}`, {
             headers: {
                 // 'X-API-KEY': import.meta.env.VITE_API_KEY,

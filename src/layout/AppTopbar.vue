@@ -1,7 +1,8 @@
 <script setup>
 import { useLayout } from '@/layout/composables/layout';
-
+import { inject } from 'vue';
 const { onMenuToggle, toggleDarkMode, isDarkTheme } = useLayout();
+const { login, signout } = inject('user');
 </script>
 
 <template>
@@ -35,7 +36,8 @@ const { onMenuToggle, toggleDarkMode, isDarkTheme } = useLayout();
         </div>
 
         <div class="layout-topbar-actions">
-            <!-- <div class="layout-config-menu">
+            <Button label="Signout" @click="signout" />
+            <!-- <div class="layout-config-menu">            
                 <button type="button" class="layout-topbar-action" @click="toggleDarkMode">
                     <i :class="['pi', { 'pi-moon': isDarkTheme, 'pi-sun': !isDarkTheme }]"></i>
                 </button>

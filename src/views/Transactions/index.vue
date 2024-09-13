@@ -1,17 +1,40 @@
 <script setup>
-import { CustomerService } from '@/service/CustomerService';
-import { ProductService } from '@/service/ProductService';
+import { TransactionService } from '@/service/TransactionService';
 import { FilterMatchMode, FilterOperator } from '@primevue/core/api';
-import { onBeforeMount, reactive, ref } from 'vue';
+import { inject, onBeforeMount, reactive, ref } from 'vue';
+const { user, login, signout } = inject('user');
 
 const customers1 = ref(null);
+const transactions = ref([
+    {
+        id: 1,
+        Trans_Id: '1298379872',
+        Categories: [1, 4, 2, 3],
+        Sub_Amount: 14312,
+        Convenience_Fee: 1233,
+        Total_Amount: 123.123,
+        Status: 'Created',
+        Transaction_Date: '1/12/2024',
+        Settle_Date: '1/13/2024'
+    },
+    {
+        id: 2,
+        Trans_Id: '124123123',
+        Categories: [1, 4, 2, 3],
+        Sub_Amount: 12312,
+        Convenience_Fee: 1233,
+        Total_Amount: 125.123,
+        Status: 'success',
+        Transaction_Date: '1/12/2024',
+        Settle_Date: null
+    }
+]);
 const preLoader = ref(true);
 const customers2 = ref(null);
 const customers3 = ref(null);
 const filters1 = ref(null);
 const loading1 = ref(null);
 const balanceFrozen = ref(false);
-const products = ref(null);
 const expandedRows = ref([]);
 const statuses = reactive(['unqualified', 'qualified', 'new', 'negotiation', 'renewal', 'proposal']);
 const representatives = reactive([
@@ -65,6 +88,25 @@ function getSeverity(status) {
     }
 }
 
+function getStatus(status) {
+    switch (status) {
+        case 'FAILED':
+            return 'danger';
+
+        case 'SUCCESS':
+            return 'success';
+
+        case 'new':
+            return 'info';
+
+        case 'CREATED' || 'PENDING':
+            return 'warn';
+
+        case 'renewal':
+            return null;
+    }
+}
+
 function getStockSeverity(product) {
     switch (product.inventoryStatus) {
         case 'INSTOCK':
@@ -81,17 +123,30 @@ function getStockSeverity(product) {
     }
 }
 
-onBeforeMount(() => {
-    ProductService.getProductsWithOrdersSmall().then((data) => (products.value = data));
-    CustomerService.getCustomersSmall().then((data) => {
-        customers1.value = data;
-        loading1.value = false;
-        customers1.value.forEach((customer) => (customer.date = new Date(customer.date)));
+onBeforeMount(async () => {
+    // ProductService.getProductsWithOrdersSmall().then((data) => (products.value = data));
+    // CustomerService.getCustomersSmall().then((data) => {
+    //     customers1.value = data;
+    //     loading1.value = false;
+    //     customers1.value.forEach((customer) => (customer.date = new Date(customer.date)));
+    // });
+    let tx = await TransactionService.getAllTransaction();
+    const mappedTx = tx.map(({ id, Trans_Id, Categories, Penalties, Sub_Amount, Total_Amount, Date_Created, created_at, updated_at }) => {
+        return {
+            id,
+            Trans_Id,
+            Categories,
+            Sub_Amount,
+            Total_Amount,
+            Convenience_Fee: Penalties,
+            Status: formatDate(new Date(created_at)),
+            Transaction_Date: formatDate(new Date(Date_Created)),
+            Settle_Date: formatDate(new Date(updated_at))
+        };
     });
-    // CustomerService.getCustomersLarge().then((data) => (customers2.value = data));
-    // CustomerService.getCustomersMedium().then((data) => (customers3.value = data));
-    setTimeout(() => (preLoader.value = false), 5000);
-
+    console.log(tx, transactions, mappedTx);
+    transactions.value = tx;
+    preLoader.value = false;
     initFilters1();
 });
 
@@ -109,16 +164,8 @@ function initFilters1() {
     };
 }
 
-function expandAll() {
-    expandedRows.value = products.value.reduce((acc, p) => (acc[p.id] = true) && acc, {});
-}
-
-function collapseAll() {
-    expandedRows.value = null;
-}
-
 function formatCurrency(value) {
-    return value.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+    return (typeof value == 'number' ? value : parseFloat(value)).toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 function formatDate(value) {
@@ -128,26 +175,13 @@ function formatDate(value) {
         year: 'numeric'
     });
 }
-
-function calculateCustomerTotal(name) {
-    let total = 0;
-    if (customers3.value) {
-        for (let customer of customers3.value) {
-            if (customer.representative.name === name) {
-                total++;
-            }
-        }
-    }
-
-    return total;
-}
 </script>
 
 <template>
-    <Skeleton v-if="preLoader" width="100%" height="55rem"></Skeleton>
+    <Skeleton v-if="preLoader" width="100%" height="65vh"></Skeleton>
     <div v-else class="card">
         <div class="font-semibold text-xl mb-4">Transactions</div>
-        <DataTable
+        <!-- <DataTable
             :value="customers1"
             :paginator="true"
             :rows="10"
@@ -155,16 +189,15 @@ function calculateCustomerTotal(name) {
             :rowHover="true"
             v-model:filters="filters1"
             removableSort
-            sortField="balance"
             :sortOrder="-1"
-            :loading="false"
+            :loading="true"
             :filters="filters1"
             :globalFilterFields="['name', 'country.name', 'representative.name', 'balance', 'status']"
             showGridlines
         >
             <template #header>
                 <div class="flex justify-between">
-                    <!-- <Button type="button" icon="pi pi-filter-slash" label="Clear" outlined @click="clearFilter()" /> -->
+                    <Button type="button" icon="pi pi-filter-slash" label="Clear" outlined @click="clearFilter()" />
                     <IconField>
                         <InputIcon>
                             <i class="pi pi-search" />
@@ -173,8 +206,8 @@ function calculateCustomerTotal(name) {
                     </IconField>
                 </div>
             </template>
-            <template #empty> No customers found. </template>
-            <template #loading> Loading customers data. Please wait. </template>
+            <template #empty> No transaction found. </template>
+            <template #loading> Loading transaction data. Please wait. </template>
             <Column sortable field="name" header="Name" style="min-width: 12rem">
                 <template #body="{ data }">
                     {{ data.name }}
@@ -266,6 +299,37 @@ function calculateCustomerTotal(name) {
                     <label for="verified-filter" class="font-bold"> Verified </label>
                     <Checkbox v-model="filterModel.value" :indeterminate="filterModel.value === null" binary inputId="verified-filter" />
                 </template>
+            </Column>
+        </DataTable> -->
+        <DataTable :value="transactions" dataKey="id" striped-rows removable-sort :sort-order="-1" tableStyle="min-width: 50rem">
+            <template #empty>No transaction data found.</template>
+            <template #loading>Preparing transaction data. Please wait.</template>
+            <Column field="id" header="Reference No.">
+                <template #body="{ data }">{{ data.id }}</template>
+            </Column>
+            <Column field="Trans_Id" header="Transaction No.">
+                <template #body="{ data }">{{ data.Trans_Id }}</template>
+            </Column>
+            <Column field="Categories" header="Categories">
+                <template #body="{ data }">{{ data.Categories.join(',') }}</template>
+            </Column>
+            <Column field="Sub_Amount" header="Sub-Amount" sortable>
+                <template #body="slotProps">{{ formatCurrency(slotProps.data.Sub_Amount) }}</template>
+            </Column>
+            <Column field="Convenience_Fee" header="Convenience Fee">
+                <template #body="{ data }">{{ data.Convenience_Fee }}</template>
+            </Column>
+            <Column field="Total_Amount" header="Total Amount" sortable>
+                <template #body="slotProps">{{ formatCurrency(slotProps.data.Total_Amount) }}</template>
+            </Column>
+            <Column field="Status" header="Status">
+                <template #body="{ data }"> <Tag :value="data.Status.toLowerCase() == 'created' ? 'pending' : data.Status.toLowerCase()" :severity="getStatus(data.Status.toUpperCase())" /> </template>
+            </Column>
+            <Column field="Transaction_Date" header="Transaction Date">
+                <template #body="{ data }">{{ data.Transaction_Date }}</template>
+            </Column>
+            <Column field="Settle_Date" header="Settled Date">
+                <template #body="{ data }">{{ data.Settle_Date ?? '-' }}</template>
             </Column>
         </DataTable>
     </div>

@@ -1,12 +1,14 @@
 <script setup>
 import { useLayout } from '@/layout/composables/layout';
-import { computed, ref, watch } from 'vue';
+import { computed, nextTick, onBeforeMount, onMounted, provide, ref, watch } from 'vue';
+import AppConfigurator from './AppConfigurator.vue';
 import AppFooter from './AppFooter.vue';
 import AppSidebar from './AppSidebar.vue';
 import AppTopbar from './AppTopbar.vue';
-
 const { layoutConfig, layoutState, isSidebarActive, resetMenu } = useLayout();
 
+const isLogin = ref(false);
+const isLoading = ref(true);
 const outsideClickListener = ref(null);
 
 watch(isSidebarActive, (newVal) => {
@@ -17,6 +19,16 @@ watch(isSidebarActive, (newVal) => {
     }
 });
 
+const isLoadingContent = (bool) => (isLoading = bool);
+
+const user = computed(() => {
+    const user = window.localStorage.getItem('user');
+    if (!user) {
+        isLogin.value = false;
+        return null;
+    }
+    return JSON.parse(user);
+});
 const containerClass = computed(() => {
     return {
         'layout-overlay': layoutConfig.menuMode === 'overlay',
@@ -51,19 +63,33 @@ function isOutsideClicked(event) {
 
     return !(sidebarEl.isSameNode(event.target) || sidebarEl.contains(event.target) || topbarEl.isSameNode(event.target) || topbarEl.contains(event.target));
 }
+
+provide('is-loading-content', isLoadingContent);
+
+onBeforeMount(() => {});
+
+onMounted(() => {
+    nextTick(() => {
+        setTimeout(() => {
+            document.body.classList.remove('preparing-content');
+            isLoading.value = false;
+        }, 1000);
+    });
+});
 </script>
 
 <template>
     <div class="layout-wrapper" :class="containerClass">
-        <app-topbar></app-topbar>
-        <app-sidebar></app-sidebar>
+        <app-topbar v-if="user" :user="user" />
+        <app-sidebar v-if="user" :user="user" />
         <div class="layout-main-container m-xs:!px-1">
             <div class="layout-main">
                 <router-view></router-view>
             </div>
-            <app-footer></app-footer>
+            <app-footer />
         </div>
         <div class="layout-mask animate-fadein"></div>
     </div>
+    <AppConfigurator />
     <Toast />
 </template>

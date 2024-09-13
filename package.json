@@ -1,5 +1,5 @@
 {
-    "name": "sakai-vue",
+    "name": "sj-batangas-lgu",
     "version": "4.1.0",
     "scripts": {
         "dev": "vite",
@@ -12,6 +12,8 @@
         "chart.js": "3.3.2",
         "primeicons": "^6.0.1",
         "primevue": "^4.0.0",
+        "salted-md5": "^4.0.8",
+        "uuid": "^10.0.0",
         "vue": "^3.4.34",
         "vue-router": "^4.4.0"
     },

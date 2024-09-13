@@ -12,8 +12,8 @@ const model = ref([
         label: 'Tables',
         items: [
             { label: 'Transactions', icon: 'pi pi-fw pi-wallet', to: '/transactions' },
-            { label: 'Criterias', icon: 'pi pi-fw pi-folder', to: '/transactions' },
-            { label: 'Users', icon: 'pi pi-fw pi-users', to: '/transactions' }
+            { label: 'Criterias', icon: 'pi pi-fw pi-folder', to: '/criterias' },
+            { label: 'Users', icon: 'pi pi-fw pi-users', to: '/users' }
             // { label: 'Form Layout', icon: 'pi pi-fw pi-id-card', to: '/uikit/formlayout' },
             // { label: 'Input', icon: 'pi pi-fw pi-check-square', to: '/uikit/input' },
             // { label: 'Button', icon: 'pi pi-fw pi-mobile', to: '/uikit/button', class: 'rotated-icon' },

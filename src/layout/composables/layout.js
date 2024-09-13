@@ -3,7 +3,7 @@ import { computed, reactive, readonly } from 'vue';
 const layoutConfig = reactive({
     preset: 'Lara',
     primary: 'emerald',
-    surface: 'ocean',
+    surface: 'soho',
     darkTheme: false,
     menuMode: 'overlay'
 });

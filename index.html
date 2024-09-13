@@ -1,17 +1,64 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" href="/favicon.ico" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>San Jose, BTG LGU</title>
+        <link href="https://fonts.cdnfonts.com/css/lato" rel="stylesheet" />
+        <style>
+            body.preparing-content {
+                overflow: hidden;
+                margin: 0;
+                padding: 0;
+            }
+            body.preparing-content #PageLoader {
+                display: flex;
+            }
+            #PageLoader {
+                all: none;
+                position: absolute;
+                display: none;
+                flex-wrap: wrap;
+                justify-content: center;
+                align-items: center;
+                background-color: rgb(0 0 0 / 90%);
+                height: 100%;
+                width: 100%;
+                z-index: 10;
+                overflow: hidden !important;
+            }
+            #PageLoader img {
+                border-radius: 99999px;
+            }
 
-<head>
-      <meta charset="UTF-8">
-      <link rel="icon" href="/favicon.ico">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>San Jose, BTG LGU</title>
-      <link href="https://fonts.cdnfonts.com/css/lato" rel="stylesheet">
-</head>
+            .shadow-rotation {
+                filter: drop-shadow(0 5px 30px #fff);
+                animation: shadowRotate 1.5s linear infinite;
+            }
 
-<body>
-      <div id="app"></div>
-      <script type="module" src="/src/main.js"></script>
-</body>
+            @keyframes shadowRotate {
+                25% {
+                    filter: drop-shadow(-5px 0 30px #fff);
+                }
+                50% {
+                    filter: drop-shadow(0 -5px 30px #fff);
+                }
+                70% {
+                    filter: drop-shadow(5px 0 30px #fff);
+                }
+                100% {
+                    transform: drop-shadow(0 5px 30px #fff);
+                }
+            }
+        </style>
+    </head>
 
+    <body class="preparing-content">
+        <div id="PageLoader">
+            <img width="256" src="/src/assets/images/san_jose_batangas_logo.jpg" alt="" class="shadow-rotation" />
+        </div>
+        <div id="app"></div>
+        <script type="module" src="/src/main.js"></script>
+    </body>
 </html>

@@ -9,8 +9,8 @@
             </div>
             <div class="flex flex-column flex-wrap font-semibold text-xl">
                 <span>{{ item.name }}</span>
-                <Button v-if="!item.hasOwnProperty('note')" label="Add Note" size="small" icon="pi pi-plus" class="h-8 w-auto ml-5" @click="item['note'] = ''" #end></Button>
-                <Button v-else label="Remove Note" size="small" icon="pi pi-trash" class="h-8 w-auto ml-5 !bg-red-600 !border-0" @click="delete item.note" #end></Button>
+                <Button v-if="!item.hasOwnProperty('note')" label="Note" size="small" icon="pi pi-plus" class="h-8 w-auto ml-5" @click="item['note'] = ''" #end></Button>
+                <Button v-else label="Note" size="small" icon="pi pi-trash" class="h-8 w-auto ml-5 !bg-red-600 !border-0" @click="delete item.note" #end></Button>
             </div>
             <div class="flex-col grid gap-5">
                 <Textarea v-show="item.hasOwnProperty('note')" variant="filled" v-model="item.note" rows="2" class="w-full md:w-1/2" cols="10" />
@@ -231,6 +231,6 @@ function formatDate(value) {
 const totalItemsProp = (prop) => {};
 
 onMounted(() => {
-    // TransactionService.getTransaction(123);
+    TransactionService.getAllTransaction();
 });
 </script>

@@ -3,7 +3,7 @@ import { useLayout } from '@/layout/composables/layout';
 import { $t, updatePreset, updateSurfacePalette } from '@primevue/themes';
 import Aura from '@primevue/themes/aura';
 import Lara from '@primevue/themes/lara';
-import { nextTick, onMounted, ref } from 'vue';
+import { nextTick, onBeforeMount, ref } from 'vue';
 
 const { layoutConfig, setPrimary, setSurface, setPreset, isDarkTheme, setMenuMode } = useLayout();
 
@@ -166,7 +166,6 @@ function getPresetExt() {
 }
 
 function updateColors(type, color) {
-    console.log(type, color);
     if (type === 'primary') {
         setPrimary(color.name);
     } else if (type === 'surface') {
@@ -196,16 +195,17 @@ function onMenuModeChange() {
     setMenuMode(menuMode.value);
 }
 
-onMounted(() => {
+onBeforeMount(() => {
     nextTick(() => {
-        updateColors(
-            'primary',
-            primaryColors.value.find((color) => color.name == 'emerald')
-        );
-        updateColors(
-            'surface',
-            surfaces.value.find((color) => color.name == 'stone')
-        );
+        // updateColors(
+        //     'primary',
+        //     primaryColors.value.find((color) => color.name == 'emerald')
+        // );
+        // updateColors(
+        //     'surface',
+        //     surfaces.value.find((color) => color.name == 'stone')
+        // );
+        onPresetChange();
     });
 });
 </script>

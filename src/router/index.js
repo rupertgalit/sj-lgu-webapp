@@ -10,6 +10,11 @@ const router = createRouter({
             children: [
                 {
                     path: '/',
+                    name: 'login',
+                    component: () => import('@/views/Auth/index.vue')
+                },
+                {
+                    path: '/dashboard',
                     name: 'dashboard',
                     component: () => import('@/views/Dashboard.vue')
                 },
@@ -17,6 +22,16 @@ const router = createRouter({
                     path: '/create-transaction',
                     name: 'CreateTransaction',
                     component: () => import('@/views/CreateTransaction/index.vue')
+                },
+                {
+                    path: '/criterias',
+                    name: 'Criterias',
+                    component: () => import('@/views/Criterias/index.vue')
+                },
+                {
+                    path: '/users',
+                    name: 'Users',
+                    component: () => import('@/views/Users/index.vue')
                 },
                 {
                     path: '/uikit/formlayout',
@@ -122,11 +137,11 @@ const router = createRouter({
             component: () => import('@/views/pages/NotFound.vue')
         },
 
-        {
-            path: '/auth/login',
-            name: 'login',
-            component: () => import('@/views/pages/auth/Login.vue')
-        },
+        // {
+        //     path: '/auth/login',
+        //     name: 'login',
+        //     component: () => import('@/views/pages/auth/Login.vue')
+        // },
         {
             path: '/auth/access',
             name: 'accessDenied',
@@ -140,4 +155,19 @@ const router = createRouter({
     ]
 });
 
+router.beforeEach((to, from, next) => {
+    const item = localStorage.getItem('user');
+    if (item) {
+        if (location.pathname == '/') {
+            window.location.replace('/dashboard');
+            return;
+        }
+        next();
+        return;
+    }
+    if (location.pathname != '/') {
+        window.location.replace('/');
+    }
+    next();
+});
 export default router;

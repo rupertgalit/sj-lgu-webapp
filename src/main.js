@@ -10,6 +10,8 @@ import ToastService from 'primevue/toastservice';
 import '@/assets/styles.scss';
 import '@/assets/tailwind.css';
 
+import { login, signout } from './helper/auth-helper';
+
 const app = createApp(App);
 
 app.use(router);
@@ -23,5 +25,6 @@ app.use(PrimeVue, {
 });
 app.use(ToastService);
 app.use(ConfirmationService);
+app.provide('user', { login, signout });
 
 app.mount('#app');
