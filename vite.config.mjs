@@ -4,6 +4,7 @@ import { PrimeVueResolver } from '@primevue/auto-import-resolver';
 import vue from '@vitejs/plugin-vue';
 import Components from 'unplugin-vue-components/vite';
 import { defineConfig } from 'vite';
+// import GetIP from './src/helper/ip-getter';
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -20,5 +21,6 @@ export default defineConfig({
         alias: {
             '@': fileURLToPath(new URL('./src', import.meta.url))
         }
-    }
+    },
+    define: {}
 });

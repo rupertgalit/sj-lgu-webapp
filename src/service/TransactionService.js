@@ -1,8 +1,9 @@
+const meta = import.meta.env;
+
 export const TransactionService = {
     endpoint: 'transaction',
-
     async getAllTransaction(length = null, page = 1) {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}${this.endpoint}`, {
+        const res = await fetch(`${meta.VITE_API_URL}${this.endpoint}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json'
@@ -17,8 +18,7 @@ export const TransactionService = {
         };
     },
     async getTransaction(id) {
-        console.log(id, import.meta.env);
-        const res = fetch(`${import.meta.env.VITE_API_URL}${this.endpoint}`, {
+        const res = fetch(`${meta.VITE_API_URL}${this.endpoint}`, {
             headers: {
                 // 'X-API-KEY': import.meta.env.VITE_API_KEY,
                 'Content-Type': 'application/json'
@@ -26,11 +26,10 @@ export const TransactionService = {
             body: JSON.stringify({ reference_number: 'TEST-CI0028814' }),
             method: 'POST'
         });
-        console.log(res.status);
     },
 
     async createTransaction(params) {
-        const res = fetch(`${import.meta.env.VITE_API_URL}${this.endpoint}`, {
+        const res = await fetch(`${meta.VITE_API_URL}${this.endpoint}`, {
             headers: {
                 // 'X-API-KEY': import.meta.env.VITE_API_KEY,
                 'Content-Type': 'application/json'

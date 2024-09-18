@@ -20,7 +20,6 @@ const layoutState = reactive({
 
 export function useLayout() {
     const setPrimary = (value) => {
-        console.log(value);
         layoutConfig.primary = value;
     };
 

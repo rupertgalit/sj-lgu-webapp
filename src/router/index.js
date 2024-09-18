@@ -38,6 +38,11 @@ const router = createRouter({
                     name: 'formlayout',
                     component: () => import('@/views/uikit/FormLayout.vue')
                 },
+                {
+                    path: '/transactions',
+                    name: 'transactions',
+                    component: () => import('@/views/Transactions/index.vue')
+                }
                 // {
                 //     path: '/uikit/input',
                 //     name: 'input',
@@ -48,11 +53,7 @@ const router = createRouter({
                 //     name: 'button',
                 //     component: () => import('@/views/uikit/ButtonDoc.vue')
                 // },
-                {
-                    path: '/transactions',
-                    name: 'table',
-                    component: () => import('@/views/Transactions/index.vue')
-                }
+
                 // {
                 //     path: '/uikit/list',
                 //     name: 'list',
@@ -157,16 +158,24 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
     const item = localStorage.getItem('user');
+    const routes = router.getRoutes();
+
     if (item) {
-        if (location.pathname == '/') {
-            window.location.replace('/dashboard');
+        if (to.fullPath == '/') {
+            next({ name: 'dashboard' });
+            return;
+        }
+        if (!to.name || to.name == 'notfound') {
+            document.body.classList.remove('preparing-content');
+            if (!to.name) next({ name: 'notfound' });
+            next();
             return;
         }
         next();
         return;
     }
-    if (location.pathname != '/') {
-        window.location.replace('/');
+    if (to.fullPath != '/') {
+        next({ name: 'login' });
     }
     next();
 });

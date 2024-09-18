@@ -17,7 +17,6 @@ export const UserService = {
         };
     },
     async getUser(id) {
-        console.log(id, import.meta.env);
         const res = fetch(`${import.meta.env.VITE_API_URL}${this.endpoint}`, {
             headers: {
                 // 'X-API-KEY': import.meta.env.VITE_API_KEY,
@@ -26,7 +25,6 @@ export const UserService = {
             body: JSON.stringify({ reference_number: 'TEST-CI0028814' }),
             method: 'POST'
         });
-        console.log(res.status);
     },
 
     async createUser(params) {

@@ -1,5 +1,6 @@
 <script setup>
 import { useLayout } from '@/layout/composables/layout';
+import { useToast } from 'primevue/usetoast';
 import { computed, nextTick, onBeforeMount, onMounted, provide, ref, watch } from 'vue';
 import AppConfigurator from './AppConfigurator.vue';
 import AppFooter from './AppFooter.vue';
@@ -7,6 +8,7 @@ import AppSidebar from './AppSidebar.vue';
 import AppTopbar from './AppTopbar.vue';
 const { layoutConfig, layoutState, isSidebarActive, resetMenu } = useLayout();
 
+const toast = useToast();
 const isLogin = ref(false);
 const isLoading = ref(true);
 const outsideClickListener = ref(null);
@@ -64,9 +66,15 @@ function isOutsideClicked(event) {
     return !(sidebarEl.isSameNode(event.target) || sidebarEl.contains(event.target) || topbarEl.isSameNode(event.target) || topbarEl.contains(event.target));
 }
 
-provide('is-loading-content', isLoadingContent);
-
-onBeforeMount(() => {});
+onBeforeMount(() => {
+    provide('is-loading-content', isLoadingContent);
+    provide('toast', (serverity, message, summary = null) => {
+        const capitalize = () => {
+            return serverity.charAt(0).toUpperCase() + serverity.slice(1);
+        };
+        toast.add({ severity: serverity.toLowerCase(), summary: summary ?? capitalize(), detail: message, life: 3000 });
+    });
+});
 
 onMounted(() => {
     nextTick(() => {
@@ -80,10 +88,11 @@ onMounted(() => {
 
 <template>
     <div class="layout-wrapper" :class="containerClass">
+        <Toast />
         <app-topbar v-if="user" :user="user" />
         <app-sidebar v-if="user" :user="user" />
         <div class="layout-main-container m-xs:!px-1">
-            <div class="layout-main">
+            <div class="layout-main pb-5">
                 <router-view></router-view>
             </div>
             <app-footer />

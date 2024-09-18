@@ -27,6 +27,17 @@ const transactions = ref([
         Status: 'success',
         Transaction_Date: '1/12/2024',
         Settle_Date: null
+    },
+    {
+        id: 3,
+        Trans_Id: 123123,
+        Categories: 'awdad',
+        Penalties: 123123,
+        Sub_Amount: 1245612,
+        Total_Amount: 12312,
+        Date_Created: '2024-09-05 00:00:00',
+        created_at: '2024-09-11T06:45:37.000000Z',
+        updated_at: '2024-09-11T06:45:37.000000Z'
     }
 ]);
 const preLoader = ref(true);
@@ -138,14 +149,13 @@ onBeforeMount(async () => {
             Categories,
             Sub_Amount,
             Total_Amount,
-            Convenience_Fee: Penalties,
-            Status: formatDate(new Date(created_at)),
+            Convenience_Fee: Penalties ? Penalties : '-',
+            Status: 'failed',
             Transaction_Date: formatDate(new Date(Date_Created)),
             Settle_Date: formatDate(new Date(updated_at))
         };
     });
-    console.log(tx, transactions, mappedTx);
-    transactions.value = tx;
+    transactions.value = mappedTx;
     preLoader.value = false;
     initFilters1();
 });
@@ -301,17 +311,20 @@ function formatDate(value) {
                 </template>
             </Column>
         </DataTable> -->
-        <DataTable :value="transactions" dataKey="id" striped-rows removable-sort :sort-order="-1" tableStyle="min-width: 50rem">
+        <DataTable :value="transactions" dataKey="id" paginator :rows="10" :rows-per-page-options="[5, 10, 20]" striped-rows removable-sort :sort-order="-1" tableStyle="min-width: 50rem">
             <template #empty>No transaction data found.</template>
             <template #loading>Preparing transaction data. Please wait.</template>
-            <Column field="id" header="Reference No.">
+            <template #filter="{ filterModel, filterCallback }">
+                <InputText v-model="filterModel.value" type="text" @input="filterCallback()" placeholder="Search by name" />
+            </template>
+            <Column sortable field="id" header="Reference No.">
                 <template #body="{ data }">{{ data.id }}</template>
             </Column>
             <Column field="Trans_Id" header="Transaction No.">
                 <template #body="{ data }">{{ data.Trans_Id }}</template>
             </Column>
-            <Column field="Categories" header="Categories">
-                <template #body="{ data }">{{ data.Categories.join(',') }}</template>
+            <Column field="Categories" header="Criterias">
+                <template #body="{ data }">{{ data.Categories ?? '-' }}</template>
             </Column>
             <Column field="Sub_Amount" header="Sub-Amount" sortable>
                 <template #body="slotProps">{{ formatCurrency(slotProps.data.Sub_Amount) }}</template>
@@ -325,10 +338,10 @@ function formatDate(value) {
             <Column field="Status" header="Status">
                 <template #body="{ data }"> <Tag :value="data.Status.toLowerCase() == 'created' ? 'pending' : data.Status.toLowerCase()" :severity="getStatus(data.Status.toUpperCase())" /> </template>
             </Column>
-            <Column field="Transaction_Date" header="Transaction Date">
+            <Column sortable field="Transaction_Date" header="Transaction Date">
                 <template #body="{ data }">{{ data.Transaction_Date }}</template>
             </Column>
-            <Column field="Settle_Date" header="Settled Date">
+            <Column sortable field="Settle_Date" header="Settled Date">
                 <template #body="{ data }">{{ data.Settle_Date ?? '-' }}</template>
             </Column>
         </DataTable>
