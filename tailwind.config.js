@@ -5,7 +5,8 @@ module.exports = {
     plugins: [require('tailwindcss-primeui')],
     theme: {
         screens: {
-            'm-xs': { max: '400px' },
+            'm-xs': { max: '450px' },
+            'm-md': { max: '650px' },
             sm: '576px',
             md: '768px',
             lg: '992px',

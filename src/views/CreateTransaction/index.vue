@@ -1,118 +1,140 @@
 <template>
-    <div class="grid px-10 py-5 pb-12 bg-white rounded mx-auto gap-5 h-full w-full">
-        <div class="flex place-content-end mt-2 mb-5">
-            <Button :disabled="data.isLoading" label="Add Item" icon="pi pi-plus" class="h-10 w-auto" @click="data.showCriteriaModal = true" #end></Button>
-        </div>
-        <div v-if="!items.length" class="card flex flex-col place-items-center flex-center w-full bg-slate-200">No Criteria</div>
-        <div v-else>
-            <div v-for="item in items" class="card relative flex flex-col gap-4 mb:w-auto m-xs:flex-wrap mx-auto my-0 flex-center border w-full m-xs:px-3">
-                <div class="absolute right-1 top-1">
-                    <!-- v-show="items.length > 1" -->
-                    <Button icon="pi pi-trash !bg-red-600" size="small" aria-label="Save" severity="danger" @click="removeCriteria(item)" />
-                </div>
-                <div class="flex flex-column flex-wrap font-semibold text-xl">
-                    <span class="capitalize">{{ item.name }}</span>
-                    <Button v-if="!item.hasOwnProperty('note')" label="Note" size="small" icon="pi pi-plus" class="h-8 w-auto ml-5" @click="item['note'] = ''" #end></Button>
-                    <Button v-else label="Note" size="small" icon="pi pi-trash" class="h-8 w-auto ml-5 !bg-red-600 !border-0" @click="delete item.note" #end></Button>
-                </div>
-                <div class="flex-col grid gap-5">
-                    <Textarea v-show="item.hasOwnProperty('note')" variant="filled" v-model="item.note" rows="2" class="w-full md:w-1/2" cols="10" />
-                    <div class="grid grid-cols-3 gap-2">
-                        <div class="flex md:col-start-2 col-start-1 gap-2 place-content-end">
-                            <label for="amount" class="leading-10">Amount</label>
+    <div class="px-10 py-5 pb-12 bg-white rounded mx-auto gap-5 h-full w-full">
+        <Stepper v-model:value="data.step" linear>
+            <StepList class="m-md:flex m-md:flex-wrap">
+                <Step :value="1">Create Transaction</Step>
+                <Step :value="2">Review Entry</Step>
+                <Step :value="3">Transaction Complete</Step>
+            </StepList>
+            <Divider />
+            <StepPanels>
+                <StepPanel :value="1" class="grid gap-4">
+                    <div class="flex place-content-end mt-2 mb-5">
+                        <Button :disabled="data.isLoading" label="Add Item" icon="pi pi-plus" class="h-10 w-auto" @click="data.showCriteriaModal = true"></Button>
+                    </div>
+                    <div v-if="!items.length" class="card flex flex-col place-items-center flex-center w-full bg-slate-200">No Item</div>
+                    <div v-else>
+                        <div v-for="item in items" class="card relative flex flex-col gap-4 mb:w-auto m-xs:flex-wrap mx-auto my-0 flex-center border w-full m-xs:px-3">
+                            <div class="absolute right-1 top-1">
+                                <!-- v-show="items.length > 1" -->
+                                <Button icon="pi pi-trash !bg-red-600" size="small" aria-label="Save" severity="danger" @click="removeCriteria(item)" />
+                            </div>
+                            <div class="flex flex-column flex-wrap font-semibold text-xl">
+                                <span class="capitalize">{{ item.name }}</span>
+                                <Button v-if="!item.hasOwnProperty('note')" label="Note" size="small" icon="pi pi-plus" class="h-8 w-auto ml-5" @click="item['note'] = ''" #end></Button>
+                                <Button v-else label="Note" size="small" icon="pi pi-trash" class="h-8 w-auto ml-5 !bg-red-600 !border-0" @click="delete item.note" #end></Button>
+                            </div>
+                            <div class="flex-col grid gap-5">
+                                <Textarea v-show="item.hasOwnProperty('note')" variant="filled" v-model="item.note" rows="2" class="w-full md:w-1/2" cols="10" />
+                                <div class="grid grid-cols-3 gap-2">
+                                    <div class="flex md:col-start-2 col-start-1 gap-2 place-content-end">
+                                        <label for="amount" class="leading-10">Amount</label>
+                                    </div>
+                                    <div class="flex md:col-start-3 col-start-2 col-span-2 gap-2">
+                                        <InputGroup>
+                                            <InputGroupAddon>₱</InputGroupAddon>
+                                            <InputNumber
+                                                v-model="item.amount"
+                                                placeholder="0.00"
+                                                inputId="locale-user"
+                                                @update:modelValue="anAmountChange($event, item)"
+                                                :disabled="item.isFixedAmount || data.isLoading"
+                                                :readonly="item.isFixedAmount || data.isLoading"
+                                                :minFractionDigits="2"
+                                                :maxFractionDigits="2"
+                                                class="currency border-0 border-b-1"
+                                            />
+                                        </InputGroup>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="flex md:col-start-3 col-start-2 col-span-2 gap-2">
-                            <InputGroup>
-                                <InputGroupAddon>₱</InputGroupAddon>
-                                <InputNumber
-                                    v-model="item.amount"
-                                    placeholder="0.00"
-                                    inputId="locale-user"
-                                    @update:modelValue="anAmountChange($event, item)"
-                                    :disabled="item.isFixedAmount || data.isLoading"
-                                    :readonly="item.isFixedAmount || data.isLoading"
-                                    :minFractionDigits="2"
-                                    :maxFractionDigits="2"
-                                    class="currency border-0 border-b-1"
-                                />
-                            </InputGroup>
+                    </div>
+                    <div class="card flex flex-col gap-4 mb:w-auto mb:flex-wrap mx-auto my-0 flex-center border w-full m-xs:px-3 py-3 totality sticky bottom-0">
+                        <div class="flex-col grid gap-2">
+                            <div class="grid grid-cols-3 gap-2">
+                                <div class="flex lg:col-start-2 col-start-1 gap-2 place-content-end">
+                                    <label class="leading-10 text-md">Sub-Total</label>
+                                </div>
+                                <div class="flex lg:col-start-3 col-start-2 col-span-2 gap-2">
+                                    <InputGroup>
+                                        <InputGroupAddon>₱</InputGroupAddon>
+                                        <InputNumber disabled v-model="subTotal" placeholder="0.00" inputId="locale-user" :minFractionDigits="2" :maxFractionDigits="2" variant="filled" class="currency border-0 border-b-1" />
+                                    </InputGroup>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-3 gap-2">
+                                <div class="flex lg:col-start-2 col-start-1 gap-2 place-content-end">
+                                    <label for="penalty" class="leading-10 text-md">Convenience Fee (1.8%)</label>
+                                </div>
+                                <div class="flex lg:col-start-3 col-start-2 col-span-2 gap-2 place-content-end">
+                                    <InputGroup class="penalty">
+                                        <InputGroupAddon>₱</InputGroupAddon>
+                                        <InputNumber disabled v-model="convenienceFee" placeholder="0.00" inputId="locale-user" :minFractionDigits="2" :maxFractionDigits="2" variant="filled" class="currency border-0 border-b-1" />
+                                    </InputGroup>
+                                </div>
+                            </div>
+                            <Divider class="!m-1" />
+                            <div class="grid grid-cols-3 gap-2">
+                                <div class="flex lg:col-start-2 col-start-1 gap-2 place-content-end">
+                                    <label class="leading-10 text-xl text-bold font-bold">Total</label>
+                                </div>
+                                <div class="flex lg:col-start-3 col-start-2 col-span-2 gap-2">
+                                    <InputGroup>
+                                        <InputGroupAddon>₱</InputGroupAddon>
+                                        <InputNumber disabled v-model="computedTotal" placeholder="0.00" inputId="locale-user" :minFractionDigits="2" :maxFractionDigits="2" variant="filled" class="currency total border-0 border-b-1" />
+                                    </InputGroup>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <!-- <div v-if="item.hasOwnProperty('penalty')" class="grid md:grid-cols-3 grid-cols-2 gap-2">
-                    <div class="flex md:col-start-2 col-start-1 gap-2">
-                        <label for="penalty" class="leading-10">Penalty</label>
-                        <InputGroup>
-                            <InputGroupAddon>₱</InputGroupAddon>
-                            <InputNumber v-model="item.penalty" placeholder="0.00" inputId="locale-user" :minFractionDigits="2" :maxFractionDigits="2" class="currency border-0 border-b-1" />
-                        </InputGroup>
+                    <div class="flex place-content-end mt-2">
+                        <Button label="Review Transaction" class="h-10 w-auto h-12" size="large" @click="reviewTransaction"></Button>
                     </div>
-                </div> -->
-                </div>
-            </div>
-        </div>
-        <div class="card flex flex-col gap-4 mb:w-auto mb:flex-wrap mx-auto my-0 flex-center border w-full m-xs:px-3 py-3 totality sticky bottom-0">
-            <!-- <div class="font-semibold text-xl">{{ item.name }}</div> -->
-            <div class="flex-col grid gap-2">
-                <div class="grid grid-cols-3 gap-2">
-                    <div class="flex lg:col-start-2 col-start-1 gap-2 place-content-end">
-                        <label class="leading-10 text-md">Sub-Total</label>
+                </StepPanel>
+                <StepPanel :value="2">
+                    <TransactionDetails :items="items" :sub-total="subTotal" :total="computedTotal" :fee="convenienceFee" />
+                    <div class="flex justify-end gap-2 flex-col sm:flex-row flex-col-reverse">
+                        <Button type="button" label="Back" severity="secondary" @click="data.step--"></Button>
+                        <Button type="button" class="w-100 md:w-52" size="large" severity="success" label="Create Transaction" :loading="data.isLoading" @click="createTransaction()" />
                     </div>
-                    <div class="flex lg:col-start-3 col-start-2 col-span-2 gap-2">
-                        <InputGroup>
-                            <InputGroupAddon>₱</InputGroupAddon>
-                            <InputNumber disabled v-model="subTotal" placeholder="0.00" inputId="locale-user" :minFractionDigits="2" :maxFractionDigits="2" variant="filled" class="currency border-0 border-b-1" />
-                        </InputGroup>
-                    </div>
-                </div>
-                <div class="grid grid-cols-3 gap-2">
-                    <div class="flex lg:col-start-2 col-start-1 gap-2 place-content-end">
-                        <label for="penalty" class="leading-10 text-md">Convenience Fee (1.8%)</label>
-                        <!-- <InputGroup>
-                            <InputGroupAddon>₱</InputGroupAddon>
-                            <InputNumber disabled v-model="totalPenalty" placeholder="0.00" inputId="locale-user" :minFractionDigits="2" :maxFractionDigits="2" variant="filled" class="currency border-0 border-b-1" />
-                        </InputGroup> -->
-                    </div>
-                    <div class="flex lg:col-start-3 col-start-2 col-span-2 gap-2 place-content-end">
-                        <InputGroup class="penalty">
-                            <InputGroupAddon>₱</InputGroupAddon>
-                            <InputNumber disabled v-model="convenienceFee" placeholder="0.00" inputId="locale-user" :minFractionDigits="2" :maxFractionDigits="2" variant="filled" class="currency border-0 border-b-1" />
-                        </InputGroup>
-                    </div>
-                </div>
-                <Divider class="!m-1" />
-                <div class="grid grid-cols-3 gap-2">
-                    <div class="flex lg:col-start-2 col-start-1 gap-2 place-content-end">
-                        <label class="leading-10 text-xl text-bold font-bold">Total</label>
-                    </div>
-                    <div class="flex lg:col-start-3 col-start-2 col-span-2 gap-2">
-                        <InputGroup>
-                            <InputGroupAddon>₱</InputGroupAddon>
-                            <InputNumber disabled v-model="computedTotal" placeholder="0.00" inputId="locale-user" :minFractionDigits="2" :maxFractionDigits="2" variant="filled" class="currency total border-0 border-b-1" />
-                        </InputGroup>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="flex place-content-end mt-2">
-            <Button label="Review Trasaction" class="h-10 w-auto h-12" size="large" @click="data.showSummarizeTransactionModal = true" #end></Button>
-        </div>
-        <Dialog v-model:visible="data.showCriteriaModal" @update:visible="onCriteriaVisibility" modal :draggable="false" header="Add Criteria" :style="{ width: '25rem' }">
+                </StepPanel>
+
+                <StepPanel :value="3">
+                    <TransactionDetails v-if="data.step == 3" :items="data.finishedTx.items" :sub-total="data.finishedTx.subTotal" :total="data.finishedTx.computedTotal" :fee="data.finishedTx.convenienceFee" />
+                    <QRCodeComponent
+                        v-if="data.step == 3"
+                        :data="'00020101021228760011ph.ppmi.p2m0111OPDVPHM1XXX0315777148000000028041652948137246807660503001520460165303608540510.005802PH5907Brankas6015City Of Mandalu62140010ph.allbank88310012ph.ppmi.qrph0111OPDVPHM1XXX6304131E'"
+                    />
+                    <div class="flex flex-col md:flex-row md:justify-end"><Button class="mb-3 md:mb-0 md:mr-3" label="Print" icon="pi pi-print" /> <Button severity="success" label="New Transaction" @click="data.step = 1" /></div>
+                </StepPanel>
+            </StepPanels>
+        </Stepper>
+
+        <Dialog v-model:visible="data.showCriteriaModal" @update:visible="onCriteriaVisibility" modal :draggable="false" header="Add Item" :style="{ width: '25rem' }">
             <div class="flex flex-col md:flex-row gap-4 pb-5 h-max">
                 <div class="w-full md:w-4/5" v-if="data.customCriteria.custom">
                     <InputText class="w-full" id="customName" placeholder="Name" @keyup.enter="addCriteria" v-model="data.customCriteria.name" />
                 </div>
-                <Select v-else id="criteria" v-model="data.dropdownItem" :options="dropdownItems" optionLabel="name" placeholder="Select Criteria" class="w-full md:w-4/5"></Select>
-                <Button type="button" :label="data.customCriteria.custom ? 'Option' : 'Custom'" severity="info" @click="data.customCriteria.custom = !data.customCriteria.custom" class="w-auto"></Button>
+                <Select v-else id="criteria" v-model="data.dropdownItem" :options="dropdownItems" optionLabel="name" placeholder="Select Item" class="w-full md:w-4/5"></Select>
+                <Button
+                    type="button"
+                    :label="data.customCriteria.custom ? 'Options' : 'Custom'"
+                    :icon="`pi ${data.customCriteria.custom ? 'pi-folder-open' : 'pi-file-edit'}`"
+                    severity="info"
+                    @click="data.customCriteria.custom = !data.customCriteria.custom"
+                    class="w-auto"
+                ></Button>
             </div>
             <div class="flex justify-end gap-2">
                 <Button type="button" label="Cancel" severity="secondary" @click="onCriteriaVisibility"></Button>
                 <Button type="button" label="Add" @click="addCriteria"></Button>
             </div>
         </Dialog>
-        <Dialog v-model:visible="data.showSummarizeTransactionModal" :closable="!data.isLoading" modal :draggable="false" header="Add Criteria" :style="{ width: '50rem' }">
+        <Dialog v-model:visible="data.showSummarizeTransactionModal" :closable="!data.isLoading" modal :draggable="false" header="Add Item" :style="{ width: '50rem' }">
             <div class="flex flex-col gap-3 py-5 px-10 pt-0">
                 <div class="grid space-between">
-                    <p class="col-start-1 font-semibold xl:text-xl pl-2">Criteria</p>
+                    <p class="col-start-1 font-semibold xl:text-xl pl-2">Item</p>
                     <p class="col-start-3 font-semibold xl:text-xl text-right pr-2">Amount (&#8369;)</p>
                 </div>
                 <div class="container max-h-96 overflow-auto">
@@ -144,7 +166,8 @@
 </template>
 <style src="./style.sass" scoped></style>
 <script setup>
-import { TransactionService } from '@/service/TransactionService';
+import QRCodeComponent from '@/components/QRCodeComponent.vue';
+import TransactionDetails from '@/components/TransactionDetails.vue';
 import { useToast } from 'primevue/usetoast';
 import { computed, nextTick, onMounted, reactive, ref } from 'vue';
 
@@ -154,14 +177,10 @@ const data = reactive({
     showSummarizeTransactionModal: false,
     dropdownItem: null,
     isLoading: false,
-    customCriteria: { custom: false, name: '' }
+    customCriteria: { custom: false, name: '' },
+    step: 1,
+    finishedTx: { item: [], computedTotal: 0, convenienceFee: 0, subTotal: 0 }
 });
-// const toast = useToast();
-// const showCriteriaModal = ref(false);
-// const showSummarizeTransactionModal = ref(false);
-// const dropdownItem = ref(null);
-// const isLoading = ref(false);
-// const customCriteria = ref({ custom: false, name: '' });
 const dropdownItems = [
     { id: 1, amount: 0, name: 'Criteria 1' },
     { id: 1, amount: 0, name: 'Criteria 2' },
@@ -170,9 +189,7 @@ const dropdownItems = [
     { id: 1, amount: 0, name: 'Criteria 5' }
 ];
 const items = ref([]);
-
-const createdTransaction = ref(null);
-
+const finishedTx = ref({ item: [], computedTotal: 0, convenienceFee: 0, subTotal: 0 });
 let subTotal = computed(() => {
     let total = 0;
     for (let item of items.value) total = total + (item.amount ? item.amount : 0);
@@ -187,7 +204,7 @@ async function addCriteria() {
         if (!data.customCriteria.name) {
             await nextTick();
             document.getElementById('customName').focus();
-            showToast('Error', 'Input the custom criteria name.');
+            showToast('Error', 'Input the custom item name.');
             return;
         }
         item = {
@@ -211,6 +228,7 @@ async function addCriteria() {
         if (item.isFixedAmount) item['fixedAmount'] = data.dropdownItem.amount;
     }
     items.value.unshift(item);
+    data.customCriteria.custom = false;
     onCriteriaVisibility();
 }
 
@@ -238,13 +256,38 @@ async function createTransaction() {
         return;
     }
 
-    const res = await TransactionService.createTransaction({ Trans_Id: '12312324', Categories: items.value.map((item) => item.code).join(','), Sub_Amount: subTotal.value, Total_Amount: computedTotal.value, Date_Created });
-    if (res.status == 200) {
-        showToast('success', 'Transaction created successfully.');
-        data.isLoading = false;
-        data.showSummarizeTransactionModal = false;
-        items.value = [];
+    // const res = await TransactionService.createTransaction({ Trans_Id: '12312324', Categories: items.value.map((item) => item.code).join(','), Sub_Amount: subTotal.value, Total_Amount: computedTotal.value, Date_Created });
+    // if (res.status == 200) {
+    showToast('success', 'Transaction created successfully.');
+    finishedTx.value = {
+        refNo: '123124',
+        recepient: 'John Doe',
+        items: items.value,
+        subTotal: subTotal.value,
+        convenienceFee: convenienceFee.value,
+        computedTotal: computedTotal.value
+    };
+    data.finishedTx = {
+        refNo: '123124',
+        recepient: 'John Doe',
+        items: items.value,
+        subTotal: subTotal.value,
+        convenienceFee: convenienceFee.value,
+        computedTotal: computedTotal.value
+    };
+    data.step++;
+    data.isLoading = false;
+    data.showSummarizeTransactionModal = false;
+    items.value = [];
+    // }
+}
+
+function reviewTransaction() {
+    if (!items.value.length) {
+        showToast('error', 'No item listed.');
+        return;
     }
+    data.step++;
 }
 
 function removeCriteria(item) {
@@ -282,8 +325,6 @@ function formatDate(value) {
 function formatDateForQuery(date) {
     return `${date.getFullYear()}-${date.getMonth().toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
 }
-
-const totalItemsProp = (prop) => {};
 
 onMounted(() => {});
 </script>

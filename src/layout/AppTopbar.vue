@@ -2,7 +2,7 @@
 import { useLayout } from '@/layout/composables/layout';
 import { inject } from 'vue';
 const { onMenuToggle, toggleDarkMode, isDarkTheme } = useLayout();
-const { login, signout } = inject('user');
+const { signout } = inject('user');
 </script>
 
 <template>
@@ -36,7 +36,7 @@ const { login, signout } = inject('user');
         </div>
 
         <div class="layout-topbar-actions">
-            <Button label="Signout" @click="signout" />
+            <Button size="small" label="Signout" @click="signout" />
             <!-- <div class="layout-config-menu">            
                 <button type="button" class="layout-topbar-action" @click="toggleDarkMode">
                     <i :class="['pi', { 'pi-moon': isDarkTheme, 'pi-sun': !isDarkTheme }]"></i>

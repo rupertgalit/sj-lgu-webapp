@@ -157,10 +157,7 @@ const router = createRouter({
 });
 
 router.beforeEach((to, from, next) => {
-    const item = localStorage.getItem('user');
-    const routes = router.getRoutes();
-
-    if (item) {
+    if (!['', 'null', '{}'].includes(document.cookie)) {
         if (to.fullPath == '/') {
             next({ name: 'dashboard' });
             return;

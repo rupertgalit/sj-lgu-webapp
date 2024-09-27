@@ -1,8 +1,8 @@
 export const AuthService = {
-    endpoint: 'auth',
+    endpoint: 'login',
 
     async Authenticate(params) {
-        const res = fetch(`${import.meta.env.VITE_API_URL}${this.endpoint}`, {
+        const res = await fetch(`/api/${this.endpoint}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -10,7 +10,8 @@ export const AuthService = {
             body: JSON.stringify(params)
         });
 
-        if (res.status == 200) return res.json();
+        if (res.status == 200) return await res.json();
+
         return {
             status: res.status,
             type: res.type,

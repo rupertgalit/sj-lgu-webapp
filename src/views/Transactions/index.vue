@@ -1,10 +1,36 @@
 <script setup>
 import { TransactionService } from '@/service/TransactionService';
-import { FilterMatchMode, FilterOperator } from '@primevue/core/api';
-import { inject, onBeforeMount, reactive, ref } from 'vue';
+import { inject, nextTick, onMounted, reactive, ref } from 'vue';
 const { user, login, signout } = inject('user');
 
-const customers1 = ref(null);
+const data = reactive({
+    pagination: {
+        page: 1,
+        length: 10,
+        totalCount: 0,
+        first: 0
+    },
+    filter: ''
+});
+const menu = ref(null);
+const tx = ref(null);
+const popover = ref(null);
+const poData = ref(null);
+const dFilename = ref('filename');
+const isLoading = ref(false);
+const overlayMenuItems = ref([
+    {
+        separator: true
+    },
+    {
+        label: 'Download',
+        icon: 'pi pi-download'
+    },
+    {
+        label: 'Details',
+        icon: 'pi pi-file'
+    }
+]);
 const transactions = ref([
     {
         id: 1,
@@ -32,72 +58,16 @@ const transactions = ref([
         id: 3,
         Trans_Id: 123123,
         Categories: 'awdad',
-        Penalties: 123123,
+        Convenience_Fee: 123123,
         Sub_Amount: 1245612,
-        Total_Amount: 12312,
-        Date_Created: '2024-09-05 00:00:00',
+        Total_Amount: 1231,
+        Status: 'failed',
+        Transaction_Date: '2024-09-05 00:00:00',
         created_at: '2024-09-11T06:45:37.000000Z',
-        updated_at: '2024-09-11T06:45:37.000000Z'
+        Settle_Date: '2024-09-11T06:45:37.000000Z'
     }
 ]);
 const preLoader = ref(true);
-const customers2 = ref(null);
-const customers3 = ref(null);
-const filters1 = ref(null);
-const loading1 = ref(null);
-const balanceFrozen = ref(false);
-const expandedRows = ref([]);
-const statuses = reactive(['unqualified', 'qualified', 'new', 'negotiation', 'renewal', 'proposal']);
-const representatives = reactive([
-    { name: 'Amy Elsner', image: 'amyelsner.png' },
-    { name: 'Anna Fali', image: 'annafali.png' },
-    { name: 'Asiya Javayant', image: 'asiyajavayant.png' },
-    { name: 'Bernardo Dominic', image: 'bernardodominic.png' },
-    { name: 'Elwin Sharvill', image: 'elwinsharvill.png' },
-    { name: 'Ioni Bowcher', image: 'ionibowcher.png' },
-    { name: 'Ivan Magalhaes', image: 'ivanmagalhaes.png' },
-    { name: 'Onyama Limba', image: 'onyamalimba.png' },
-    { name: 'Stephen Shaw', image: 'stephenshaw.png' },
-    { name: 'XuXue Feng', image: 'xuxuefeng.png' }
-]);
-
-function getOrderSeverity(order) {
-    switch (order.status) {
-        case 'DELIVERED':
-            return 'success';
-
-        case 'CANCELLED':
-            return 'danger';
-
-        case 'PENDING':
-            return 'warn';
-
-        case 'RETURNED':
-            return 'info';
-
-        default:
-            return null;
-    }
-}
-
-function getSeverity(status) {
-    switch (status) {
-        case 'unqualified':
-            return 'danger';
-
-        case 'qualified':
-            return 'success';
-
-        case 'new':
-            return 'info';
-
-        case 'negotiation':
-            return 'warn';
-
-        case 'renewal':
-            return null;
-    }
-}
 
 function getStatus(status) {
     switch (status) {
@@ -110,7 +80,9 @@ function getStatus(status) {
         case 'new':
             return 'info';
 
-        case 'CREATED' || 'PENDING':
+        case 'CREATED':
+            return 'warn';
+        case 'PENDING':
             return 'warn';
 
         case 'renewal':
@@ -118,31 +90,13 @@ function getStatus(status) {
     }
 }
 
-function getStockSeverity(product) {
-    switch (product.inventoryStatus) {
-        case 'INSTOCK':
-            return 'success';
+async function fetchTransaction() {
+    isLoading.value = true;
 
-        case 'LOWSTOCK':
-            return 'warn';
-
-        case 'OUTOFSTOCK':
-            return 'danger';
-
-        default:
-            return null;
-    }
-}
-
-onBeforeMount(async () => {
-    // ProductService.getProductsWithOrdersSmall().then((data) => (products.value = data));
-    // CustomerService.getCustomersSmall().then((data) => {
-    //     customers1.value = data;
-    //     loading1.value = false;
-    //     customers1.value.forEach((customer) => (customer.date = new Date(customer.date)));
-    // });
-    let tx = await TransactionService.getAllTransaction();
-    const mappedTx = tx.map(({ id, Trans_Id, Categories, Penalties, Sub_Amount, Total_Amount, Date_Created, created_at, updated_at }) => {
+    let tx = await TransactionService.getAllTransaction({
+        ...data.pagination
+    });
+    const mappedTx = tx.data.map(({ id, Trans_Id, Categories, Penalties, Sub_Amount, Total_Amount, Date_Created, created_at, updated_at }) => {
         return {
             id,
             Trans_Id,
@@ -155,167 +109,93 @@ onBeforeMount(async () => {
             Settle_Date: formatDate(new Date(updated_at))
         };
     });
-    transactions.value = mappedTx;
-    preLoader.value = false;
-    initFilters1();
-});
-
-function initFilters1() {
-    filters1.value = {
-        global: { value: null, matchMode: FilterMatchMode.CONTAINS },
-        name: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.STARTS_WITH }] },
-        'country.name': { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.STARTS_WITH }] },
-        representative: { value: null, matchMode: FilterMatchMode.IN },
-        date: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.DATE_IS }] },
-        balance: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.EQUALS }] },
-        status: { operator: FilterOperator.OR, constraints: [{ value: null, matchMode: FilterMatchMode.EQUALS }] },
-        activity: { value: [0, 100], matchMode: FilterMatchMode.BETWEEN },
-        verified: { value: null, matchMode: FilterMatchMode.EQUALS }
-    };
+    transactions.value = Array.apply(mappedTx, transactions.value);
+    data.pagination.totalCount = tx.totalCount ?? 0;
+    isLoading.value = false;
 }
 
+async function paginate(e) {
+    data.pagination = { ...data.pagination, page: e.page + 1, length: e.rows, first: e.rows != data.pagination.length ? 0 : e.first };
+    await fetchTransaction();
+}
+
+onMounted(async () => {
+    await fetchTransaction();
+    preLoader.value = false;
+});
+
 function formatCurrency(value) {
-    return (typeof value == 'number' ? value : parseFloat(value)).toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return (typeof value == 'number' ? value : parseFloat(value)).toLocaleString('en-US', { style: 'currency', currency: 'PHP', minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 function formatDate(value) {
-    return value.toLocaleDateString('en-US', {
+    if (!value || value.length == 0) return '-';
+    return new Date(value).toLocaleDateString('en-US', {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric'
     });
 }
+
+function toggleMenuItem(data, name) {
+    if (name.toLowerCase() == 'download') console.log(name);
+    if (name.toLowerCase() == 'details') showDetails(data);
+}
+
+function showDetails(data) {
+    console.log('this data will be shown', data);
+}
+
+const openPopOver = (event, data) => {
+    if (poData.value?.id != data.id) {
+        popover.value.hide();
+        poData.value = data;
+    }
+
+    nextTick(() => {
+        popover.value.show(event);
+    });
+};
 </script>
 
 <template>
     <Skeleton v-if="preLoader" width="100%" height="65vh"></Skeleton>
     <div v-else class="card">
         <div class="font-semibold text-xl mb-4">Transactions</div>
-        <!-- <DataTable
-            :value="customers1"
-            :paginator="true"
-            :rows="10"
+
+        <DataTable
+            striped-rows
+            removable-sort
+            :export-filename="dFilename"
+            exportHeader="San Jose, Batangas LGU Transaction"
+            exportFooter="San Jose, Batangas LGU Transaction"
+            ref="tx"
+            class="footer-bg-none"
             dataKey="id"
-            :rowHover="true"
-            v-model:filters="filters1"
-            removableSort
-            :sortOrder="-1"
-            :loading="true"
-            :filters="filters1"
-            :globalFilterFields="['name', 'country.name', 'representative.name', 'balance', 'status']"
-            showGridlines
+            tableStyle="min-width: 100%"
+            :loading="isLoading"
+            :value="transactions"
+            :rows="data.pagination.length"
+            :rows-per-page-options="[5, 10, 20]"
+            :globalFilterFields="['id', 'Trans_Id', 'Categories', 'Convenience_Fee', 'Total_Amount', 'Status', 'Transaction_Date', 'Settle_Date']"
+            :sort-order="-1"
+            @update:sorfField="(a) => console.log(a)"
+            @update:sorfOrder="(a) => console.log(a)"
         >
+            <template #empty>No transaction data found.</template>
+            <template #loading>Preparing transaction data. Please wait.</template>
             <template #header>
-                <div class="flex justify-between">
-                    <Button type="button" icon="pi pi-filter-slash" label="Clear" outlined @click="clearFilter()" />
+                <div class="flex justify-between bg-white-900">
+                    <div style="text-align: left">
+                        <Button class="xl:!text-lg" size="small" icon="pi pi-external-link" label="Export" @click="tx.exportCSV(null, transactions.value)" />
+                    </div>
                     <IconField>
                         <InputIcon>
                             <i class="pi pi-search" />
                         </InputIcon>
-                        <InputText v-model="filters1['global'].value" placeholder="Search" />
+                        <InputText v-model="data.filter" placeholder="Keyword Search" />
                     </IconField>
                 </div>
-            </template>
-            <template #empty> No transaction found. </template>
-            <template #loading> Loading transaction data. Please wait. </template>
-            <Column sortable field="name" header="Name" style="min-width: 12rem">
-                <template #body="{ data }">
-                    {{ data.name }}
-                </template>
-                <template #filter="{ filterModel }">
-                    <InputText v-model="filterModel.value" type="text" placeholder="Search by name" />
-                </template>
-            </Column>
-            <Column sortable header="Country" field="country.name" filterField="country.name" style="min-width: 12rem">
-                <template #body="{ data }">
-                    <div class="flex items-center gap-2">
-                        <img alt="flag" src="https://primefaces.org/cdn/primevue/images/flag/flag_placeholder.png" :class="`flag flag-${data.country.code}`" style="width: 24px" />
-                        <span>{{ data.country.name }}</span>
-                    </div>
-                </template>
-                <template #filter="{ filterModel }">
-                    <InputText v-model="filterModel.value" type="text" placeholder="Search by country" />
-                </template>
-                <template #filterclear="{ filterCallback }">
-                    <Button type="button" icon="pi pi-times" @click="filterCallback()" severity="secondary"></Button>
-                </template>
-                <template #filterapply="{ filterCallback }">
-                    <Button type="button" icon="pi pi-check" @click="filterCallback()" severity="success"></Button>
-                </template>
-            </Column>
-            <Column sortable header="Agent" filterField="representative" field="representative.name" :showFilterMatchModes="false" :filterMenuStyle="{ width: '14rem' }" style="min-width: 14rem">
-                <template #body="{ data }">
-                    <div class="flex items-center gap-2">
-                        <img :alt="data.representative.name" :src="`https://primefaces.org/cdn/primevue/images/avatar/${data.representative.image}`" style="width: 32px" />
-                        <span>{{ data.representative.name }}</span>
-                    </div>
-                </template>
-                <template #filter="{ filterModel }">
-                    <MultiSelect v-model="filterModel.value" :options="representatives" optionLabel="name" placeholder="Any">
-                        <template #option="slotProps">
-                            <div class="flex items-center gap-2">
-                                <img :alt="slotProps.option.name" :src="`https://primefaces.org/cdn/primevue/images/avatar/${slotProps.option.image}`" style="width: 32px" />
-                                <span>{{ slotProps.option.name }}</span>
-                            </div>
-                        </template>
-                    </MultiSelect>
-                </template>
-            </Column>
-            <Column sortable header="Date" filterField="date" filter="date" dataType="date" style="min-width: 10rem">
-                <template #body="{ data }">
-                    {{ formatDate(data.date) }}
-                </template>
-                <template #filter="{ filterModel }">
-                    <DatePicker v-model="filterModel.value" dateFormat="mm/dd/yy" placeholder="mm/dd/yyyy" />
-                </template>
-            </Column>
-            <Column :sortable="true" header="Balance" filter="balance" dataType="number" style="min-width: 10rem">
-                <template #body="slotProps">
-                    {{ formatCurrency(slotProps.data.balance) }}
-                </template>
-                <template #filter="{ filterModel }">
-                    <InputNumber v-model="filterModel.value" mode="currency" currency="USD" locale="en-US" />
-                </template>
-            </Column>
-            <Column sortable header="Status" field="status" :filterMenuStyle="{ width: '14rem' }" style="min-width: 12rem">
-                <template #body="{ data }">
-                    <Tag :value="data.status" :severity="getSeverity(data.status)" />
-                </template>
-                <template #filter="{ filterModel }">
-                    <Select v-model="filterModel.value" :options="statuses" placeholder="Select One" showClear>
-                        <template #option="slotProps">
-                            <Tag :value="slotProps.option" :severity="getSeverity(slotProps.option)" />
-                        </template>
-                    </Select>
-                </template>
-            </Column>
-            <Column sortable field="activity" header="Activity" :showFilterMatchModes="false" style="min-width: 12rem">
-                <template #body="{ data }">
-                    <ProgressBar :value="data.activity" :showValue="false" style="height: 6px"></ProgressBar>
-                </template>
-                <template #filter="{ filterModel }">
-                    <Slider v-model="filterModel.value" range class="m-4"></Slider>
-                    <div class="flex items-center justify-between px-2">
-                        <span>{{ filterModel.value ? filterModel.value[0] : 0 }}</span>
-                        <span>{{ filterModel.value ? filterModel.value[1] : 100 }}</span>
-                    </div>
-                </template>
-            </Column>
-            <Column sortable field="verified" header="Verified" dataType="boolean" bodyClass="text-center" style="min-width: 8rem">
-                <template #body="{ data }">
-                    <i class="pi" :class="{ 'pi-check-circle text-green-500 ': data.verified, 'pi-times-circle text-red-500': !data.verified }"></i>
-                </template>
-                <template #filter="{ filterModel }">
-                    <label for="verified-filter" class="font-bold"> Verified </label>
-                    <Checkbox v-model="filterModel.value" :indeterminate="filterModel.value === null" binary inputId="verified-filter" />
-                </template>
-            </Column>
-        </DataTable> -->
-        <DataTable :value="transactions" dataKey="id" paginator :rows="10" :rows-per-page-options="[5, 10, 20]" striped-rows removable-sort :sort-order="-1" tableStyle="min-width: 50rem">
-            <template #empty>No transaction data found.</template>
-            <template #loading>Preparing transaction data. Please wait.</template>
-            <template #filter="{ filterModel, filterCallback }">
-                <InputText v-model="filterModel.value" type="text" @input="filterCallback()" placeholder="Search by name" />
             </template>
             <Column sortable field="id" header="Reference No.">
                 <template #body="{ data }">{{ data.id }}</template>
@@ -324,27 +204,68 @@ function formatDate(value) {
                 <template #body="{ data }">{{ data.Trans_Id }}</template>
             </Column>
             <Column field="Categories" header="Criterias">
-                <template #body="{ data }">{{ data.Categories ?? '-' }}</template>
+                <template #body="{ data }"><Button class="xl:!text-lg" size="small" severity="info" label="Show" text @click="openPopOver($event, data)" /></template>
             </Column>
-            <Column field="Sub_Amount" header="Sub-Amount" sortable>
+            <Column field="Sub_Amount" header="Sub-Amount" class="!text-right" sortable>
                 <template #body="slotProps">{{ formatCurrency(slotProps.data.Sub_Amount) }}</template>
             </Column>
-            <Column field="Convenience_Fee" header="Convenience Fee">
-                <template #body="{ data }">{{ data.Convenience_Fee }}</template>
+            <Column field="Convenience_Fee" header="Convenience Fee" class="!text-right" sortable>
+                <template #body="slotProps">{{ formatCurrency(slotProps.data.Convenience_Fee) }}</template>
             </Column>
-            <Column field="Total_Amount" header="Total Amount" sortable>
+            <Column field="Total_Amount" header="Total Amount" class="!text-right" sortable>
                 <template #body="slotProps">{{ formatCurrency(slotProps.data.Total_Amount) }}</template>
             </Column>
             <Column field="Status" header="Status">
-                <template #body="{ data }"> <Tag :value="data.Status.toLowerCase() == 'created' ? 'pending' : data.Status.toLowerCase()" :severity="getStatus(data.Status.toUpperCase())" /> </template>
+                <template #body="{ data }">
+                    <Tag
+                        :value="data.Status.toLowerCase() == 'created' ? 'pending' : data.Status.toLowerCase()"
+                        :severity="getStatus(data.Status.toUpperCase())"
+                        :style="{
+                            width: '4.3rem'
+                        }"
+                    />
+                </template>
             </Column>
             <Column sortable field="Transaction_Date" header="Transaction Date">
-                <template #body="{ data }">{{ data.Transaction_Date }}</template>
+                <template #body="{ data }">{{ formatDate(data.Transaction_Date) }}</template>
             </Column>
             <Column sortable field="Settle_Date" header="Settled Date">
-                <template #body="{ data }">{{ data.Settle_Date ?? '-' }}</template>
+                <template #body="{ data }">{{ formatDate(data.Settle_Date) }}</template>
             </Column>
+            <Column>
+                <template #body="{ data }">
+                    <Menu ref="menu" :model="overlayMenuItems" :popup="true" class="!min-w-44">
+                        <template #item="_data">
+                            <div class="cursor-pointer" @click.prevent="toggleMenuItem(data, _data.label)">
+                                <i :class="_data.item.icon" class="p-3 px-4"></i>
+                                {{ _data.item.label }}
+                            </div>
+                        </template>
+                    </Menu>
+                    <Button class="xl:!text-lg" size="small" type="button" label="Actions" icon="pi pi-angle-down" icon-pos="right" @click="menu.show($event)" style="width: auto" />
+                </template>
+            </Column>
+            <template #footer class="!p-0">
+                <Paginator
+                    :ref="data.pagination.totalCount + data.pagination.page"
+                    :class="{
+                        'pointer-events-none opacity-60': isLoading
+                    }"
+                    class="rounded-none"
+                    template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink JumpToPageDropdown RowsPerPageDropdown"
+                    @page="paginate"
+                    currentPageReportTemplate="Showing {first} to {last} of {totalRecords}"
+                    :first="data.pagination.first"
+                    :rows="data.pagination.length"
+                    :totalRecords="data.pagination.totalCount"
+                    :rowsPerPageOptions="[10, 20, 30]"
+                    :active="false"
+                    :disabled="isLoading"
+                    :always-show="false"
+            /></template>
         </DataTable>
+
+        <Popover ref="popover">{{ poData.Categories }}</Popover>
     </div>
 </template>
 

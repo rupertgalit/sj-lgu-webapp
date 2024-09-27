@@ -21,15 +21,17 @@ watch(isSidebarActive, (newVal) => {
     }
 });
 
-const isLoadingContent = (bool) => (isLoading = bool);
-
 const user = computed(() => {
-    const user = window.localStorage.getItem('user');
-    if (!user) {
-        isLogin.value = false;
-        return null;
+    try {
+        const user = JSON.parse(document.cookie);
+        if (!user && !user.access_token) {
+            isLogin.value = false;
+            return null;
+        }
+        return user;
+    } catch (error) {
+        return {};
     }
-    return JSON.parse(user);
 });
 const containerClass = computed(() => {
     return {
@@ -67,7 +69,7 @@ function isOutsideClicked(event) {
 }
 
 onBeforeMount(() => {
-    provide('is-loading-content', isLoadingContent);
+    provide('user-details', JSON.parse(document.cookie));
     provide('toast', (serverity, message, summary = null) => {
         const capitalize = () => {
             return serverity.charAt(0).toUpperCase() + serverity.slice(1);
@@ -89,9 +91,9 @@ onMounted(() => {
 <template>
     <div class="layout-wrapper" :class="containerClass">
         <Toast />
-        <app-topbar v-if="user" :user="user" />
-        <app-sidebar v-if="user" :user="user" />
-        <div class="layout-main-container m-xs:!px-1">
+        <app-topbar v-if="user.access_token" :user="user.details" />
+        <app-sidebar v-if="user.access_token" :user="user.details" />
+        <div class="layout-main-container m-xs:!px-1 xl:!text-xl">
             <div class="layout-main pb-5">
                 <router-view></router-view>
             </div>
