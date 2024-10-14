@@ -16,7 +16,7 @@
             <p class="col-start-3 text-right xl:text-xl pr-2 tabular-nums">{{ subTotal == 0 ? '0.00' : formatCurrency(subTotal) }}</p>
         </div>
         <div class="grid space-between">
-            <p class="col-start-1 pl-3 xl:text-xl text-teal-800">Convenience Fee (1.8%)</p>
+            <p class="col-start-1 pl-3 xl:text-xl text-teal-800">Convenience Fee</p>
             <p class="col-start-3 text-right xl:text-xl text-teal-800 pr-2 tabular-nums">{{ fee == 0 ? '0.00' : formatCurrency(fee) }}</p>
         </div>
         <Divider class="!m-1" />

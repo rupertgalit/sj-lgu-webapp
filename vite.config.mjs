@@ -26,33 +26,17 @@ export default defineConfig({
         }
     },
     server: {
-        ws: false,
         proxy: {
-            // string shorthand: http://localhost:5173/foo -> http://localhost:4567/foo
-            // '/foo': 'http://localhost:5173',
-            // with options: http://localhost:5173/api/bar-> http://jsonplaceholder.typicode.com/bar
-            '/api': {
+            '^/api/([a-zA-Z0-9/-]+)(/[0-9]+)?$': {
                 target: 'http://sj-lgu-api.test/api/',
                 headers: {
-                    contentType: ['application/json', 'text/xml']
+                    'Content-Type': 'application/json'
                 },
                 changeOrigin: true,
                 rewrite: (path) => {
                     return path.replace(/^\/api/, '');
                 }
-
-                // configure: (proxy, options) => {
-                //     console.log(proxy, options);
-                // }
             }
-            // Using the proxy instance
-            // '/api': {
-            //     target: 'http://jsonplaceholder.typicode.com',
-            //     changeOrigin: true,
-            //     configure: (proxy, options) => {
-            //         // proxy will be an instance of 'http-proxy'
-            //     }
-            // }
         }
     }
 });

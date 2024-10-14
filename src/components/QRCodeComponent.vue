@@ -65,7 +65,7 @@ async function generateQR() {
         return;
     }
 
-    toast('error', 'Failed to create QR Code.');
+    toast.add('error', 'Failed to create QR Code.');
     state.isLoading = false;
     state.isError = true;
 }

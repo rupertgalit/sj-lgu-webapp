@@ -1,23 +1,4 @@
 /* You can add global styles to this file, and also import other style files */
-Button {
-    // & .p-button {
-    //     background-color: #527eae;
-    //     color: #fff;
-
-    //     &:hover {
-    //         background-color: #27568f !important;
-    //     }
-    // }
-
-    // &.p-button-text.p-button-secondary {
-    //     background-color: #527eae;
-    //     color: #fff;
-
-    //     &:hover {
-    //         color: #fff !important;
-    //     }
-    // }
-}
 
 .currency {
     &.deduction input {
@@ -59,7 +40,12 @@ div::-webkit-scrollbar {
 }
 
 div::-webkit-scrollbar-thumb {
+    cursor: pointer;
     background-color: var(--primary-color);
+}
+
+div::-webkit-scrollbar-thumb:hover {
+    border: 3px solid var(--primary-color);
 }
 
 div.p-dialog-header {
@@ -72,4 +58,42 @@ div#QRCode svg {
 
 div.p-datatable.footer-bg-none .p-datatable-footer {
     padding: 0 !important;
+}
+
+.p-dialog.header-pb-0 .p-dialog-header {
+    padding-bottom: 0;
+}
+
+.p-dialog.header-pb-1 .p-dialog-header {
+    padding-bottom: 1rem;
+}
+
+.p-dialog.header-pt-0 .p-dialog-header {
+    padding-top: 0;
+}
+
+.p-dialog.header-pt-1 .p-dialog-header {
+    padding-top: 1rem;
+}
+
+.p-dialog.header-mb-1 .p-dialog-header {
+    margin-bottom: 1rem;
+}
+
+.p-dialog .p-dialog-header {
+    background-color: var(--p-datatable-header-background);
+    border-radius: var(--p-dialog-border-radius);
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.p-dialog[no-header] .p-dialog-header {
+    background-color: transparent;
+    padding: 1rem 0;
+}
+
+legend.p-fieldset-legend {
+    background: none;
+    border-radius: 0;
+    border-width: 0;
 }

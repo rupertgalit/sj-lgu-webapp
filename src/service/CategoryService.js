@@ -1,8 +1,8 @@
-export const CriteriaService = {
-    endpoint: 'criterias',
+export const CategoryService = {
+    endpoint: 'categories',
 
-    async getAllCriteria(length = null, page = 1) {
-        const res = fetch(`${import.meta.env.VITE_API_URL}${this.endpoint}`, {
+    async getAllCategory(length = null, page = 1) {
+        const res = await fetch(`api/${this.endpoint}-display`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json'
@@ -16,8 +16,9 @@ export const CriteriaService = {
             message: res.statusText
         };
     },
-    async getCriteria(id) {
-        const res = fetch(`${import.meta.env.VITE_API_URL}${this.endpoint}`, {
+
+    async getCategory(id) {
+        const res = fetch(`${this.endpoint}`, {
             headers: {
                 // 'X-API-KEY': import.meta.env.VITE_API_KEY,
                 'Content-Type': 'application/json'
@@ -27,8 +28,24 @@ export const CriteriaService = {
         });
     },
 
-    async createCriteria(params) {
-        const res = fetch(`${import.meta.env.VITE_API_URL}${this.endpoint}`, {
+    async createCategory(params) {
+        const res = await fetch(`api/${this.endpoint}-insert`, {
+            headers: {
+                // 'X-API-KEY': import.meta.env.VITE_API_KEY,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(params),
+            method: 'POST'
+        });
+        if (res.status == 200) return await res.json();
+        return {
+            status: res.status,
+            type: res.type,
+            message: res.statusText
+        };
+    },
+    async updateCategory(params, id) {
+        const res = await fetch(`api/${this.endpoint}-update/${id}`, {
             headers: {
                 // 'X-API-KEY': import.meta.env.VITE_API_KEY,
                 'Content-Type': 'application/json'

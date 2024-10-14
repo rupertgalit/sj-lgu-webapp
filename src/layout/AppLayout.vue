@@ -69,12 +69,25 @@ function isOutsideClicked(event) {
 }
 
 onBeforeMount(() => {
-    provide('user-details', JSON.parse(document.cookie));
-    provide('toast', (serverity, message, summary = null) => {
-        const capitalize = () => {
-            return serverity.charAt(0).toUpperCase() + serverity.slice(1);
-        };
-        toast.add({ severity: serverity.toLowerCase(), summary: summary ?? capitalize(), detail: message, life: 3000 });
+    let u_details = {};
+
+    (() => {
+        try {
+            u_details = JSON.parse(document.cookie);
+        } catch {
+            return {};
+        }
+    })();
+
+    provide('user-details', u_details);
+    provide('toast', {
+        add: (serverity, message, summary = null, time = 3000) => {
+            const capitalize = () => {
+                return serverity.charAt(0).toUpperCase() + serverity.slice(1);
+            };
+            toast.add({ severity: serverity.toLowerCase(), summary: summary ?? capitalize(), detail: message, life: time });
+        },
+        removeAll: () => toast.removeAllGroups()
     });
 });
 
@@ -82,7 +95,7 @@ onMounted(() => {
     nextTick(() => {
         setTimeout(() => {
             document.body.classList.remove('preparing-content');
-            isLoading.value = false;
+            // isLoading.value = false;
         }, 1000);
     });
 });
@@ -93,7 +106,7 @@ onMounted(() => {
         <Toast />
         <app-topbar v-if="user.access_token" :user="user.details" />
         <app-sidebar v-if="user.access_token" :user="user.details" />
-        <div class="layout-main-container m-xs:!px-1 xl:!text-xl">
+        <div class="layout-main-container m-xs:!px-1 2xl:!text-lg">
             <div class="layout-main pb-5">
                 <router-view></router-view>
             </div>

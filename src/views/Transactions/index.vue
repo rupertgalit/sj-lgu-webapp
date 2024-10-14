@@ -1,17 +1,30 @@
 <script setup>
+import TransactionDetails from '@/components/TransactionDetails.vue';
+import { formatCurrency, formatDate } from '@/helper';
+import { CategoryService } from '@/service/CategoryService';
 import { TransactionService } from '@/service/TransactionService';
 import { inject, nextTick, onMounted, reactive, ref } from 'vue';
-const { user, login, signout } = inject('user');
+import { useRoute } from 'vue-router';
 
 const data = reactive({
     pagination: {
-        page: 1,
+        page: 0,
         length: 10,
         totalCount: 0,
-        first: 0
+        first: 0,
+        sort: 'Date_Created',
+        direction: 'desc'
     },
-    filter: ''
+    filter: '',
+    categories: [],
+    txDetails: {
+        selected: null,
+        show: false,
+        tx: {}
+    },
+    frozeSettleDate: ref(true)
 });
+const toast = inject('toast');
 const menu = ref(null);
 const tx = ref(null);
 const popover = ref(null);
@@ -37,34 +50,34 @@ const transactions = ref([
         Trans_Id: '1298379872',
         Categories: [1, 4, 2, 3],
         Sub_Amount: 14312,
-        Convenience_Fee: 1233,
+        Penalties: 1233,
         Total_Amount: 123.123,
         Status: 'Created',
         Transaction_Date: '1/12/2024',
-        Settle_Date: '1/13/2024'
+        updated_at: '1/13/2024'
     },
     {
         id: 2,
         Trans_Id: '124123123',
         Categories: [1, 4, 2, 3],
         Sub_Amount: 12312,
-        Convenience_Fee: 1233,
+        Penalties: 1233,
         Total_Amount: 125.123,
         Status: 'success',
         Transaction_Date: '1/12/2024',
-        Settle_Date: null
+        updated_at: null
     },
     {
         id: 3,
         Trans_Id: 123123,
         Categories: 'awdad',
-        Convenience_Fee: 123123,
+        Penalties: 123123,
         Sub_Amount: 1245612,
         Total_Amount: 1231,
         Status: 'failed',
         Transaction_Date: '2024-09-05 00:00:00',
         created_at: '2024-09-11T06:45:37.000000Z',
-        Settle_Date: '2024-09-11T06:45:37.000000Z'
+        updated_at: '2024-09-11T06:45:37.000000Z'
     }
 ]);
 const preLoader = ref(true);
@@ -92,58 +105,120 @@ function getStatus(status) {
 
 async function fetchTransaction() {
     isLoading.value = true;
+    const { length, page, sort, direction } = data.pagination;
+    try {
+        let tx = await TransactionService.getAllTransaction(length, page + 1, { sort, direction });
 
-    let tx = await TransactionService.getAllTransaction({
-        ...data.pagination
-    });
-    const mappedTx = tx.data.map(({ id, Trans_Id, Categories, Penalties, Sub_Amount, Total_Amount, Date_Created, created_at, updated_at }) => {
-        return {
-            id,
-            Trans_Id,
-            Categories,
-            Sub_Amount,
-            Total_Amount,
-            Convenience_Fee: Penalties ? Penalties : '-',
-            Status: 'failed',
-            Transaction_Date: formatDate(new Date(Date_Created)),
-            Settle_Date: formatDate(new Date(updated_at))
-        };
-    });
-    transactions.value = Array.apply(mappedTx, transactions.value);
-    data.pagination.totalCount = tx.totalCount ?? 0;
+        if (tx.status && !tx.data.length) throw tx;
+
+        data.pagination.totalCount = tx.pagination.total;
+        const mappedTx = parseTx(tx.data ?? tx);
+        transactions.value = mappedTx;
+    } catch (error) {
+        toast.add('error', 'Error occured upon request.');
+        return false;
+    }
+    // transactions.value = Array.apply(mappedTx, transactions.value);
     isLoading.value = false;
 }
 
+function parseTx(_data) {
+    return _data.map(({ id, Trans_Id, Reference_No, Name, Company, Categories, Penalties, Sub_Amount, Total_Amount, Date_Created, created_at, updated_at }) => {
+        Categories = Categories.split(',').map((cat) => {
+            return data.categories.find((_cat) => _cat.id == cat) ?? { Category_Name: 'N/A' };
+        });
+        return {
+            id,
+            Trans_Id,
+            Reference_No,
+            Name,
+            Company,
+            Categories,
+            Sub_Amount,
+            Total_Amount,
+            Penalties,
+            Status: 'failed',
+            Date_Created: formatDate(Date_Created, true),
+            updated_at: formatDate(updated_at, true)
+        };
+    });
+}
+
 async function paginate(e) {
-    data.pagination = { ...data.pagination, page: e.page + 1, length: e.rows, first: e.rows != data.pagination.length ? 0 : e.first };
-    await fetchTransaction();
+    data.pagination.page = e.rows != data.pagination.length ? 0 : e.page;
+    data.pagination.length = e.rows;
+    data.pagination.first = e.rows * data.pagination.page;
+    data.pagination = { ...data.pagination };
+    if ((await fetchTransaction()) == false) {
+        data.pagination.page--;
+        data.pagination.first = e.rows * data.pagination.page;
+    }
 }
 
 onMounted(async () => {
+    data.categories = await CategoryService.getAllCategory();
     await fetchTransaction();
     preLoader.value = false;
 });
 
-function formatCurrency(value) {
-    return (typeof value == 'number' ? value : parseFloat(value)).toLocaleString('en-US', { style: 'currency', currency: 'PHP', minimumFractionDigits: 2, maximumFractionDigits: 2 });
+function toggleMenuItem(name) {
+    if (name.toLowerCase() == 'download') console.log(name);
+    if (name.toLowerCase() == 'details') data.txDetails.show = true;
 }
 
-function formatDate(value) {
-    if (!value || value.length == 0) return '-';
-    return new Date(value).toLocaleDateString('en-US', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
+function showDetails(_data) {}
+
+async function searchTx() {
+    try {
+        isLoading.value = true;
+        const res = await TransactionService.searchTx(data.filter);
+        if (!res.status || res.status == 200) {
+            transactions.value = parseTx(res.data ?? res);
+            return;
+        }
+
+        toast.add('error', 'Error occured upon request.');
+    } catch (error) {
+        toast.add('error', 'Error occured upon request.');
+    } finally {
+        isLoading.value = false;
+    }
+}
+
+function exportData() {
+    dFilename.value = `transaction-${Date()}`;
+    nextTick(() => {
+        const _transactions = transactions.value.map((tx) => {
+            return {
+                ...tx,
+                Categories: data.categories.find((cat) => cat.id == tx.Categories)?.Category_Name ?? 'n/a',
+                Total_Amount: formatCurrency(tx.Total_Amount, 'PHP'),
+                Sub_Amount: formatCurrency(tx.Sub_Amount, 'PHP'),
+                Penalties: formatCurrency(tx.Penalties, 'PHP'),
+                Date_Created: formatDate(tx.Date_Created, true),
+                updated_at: formatDate(tx.updated_at, true)
+            };
+        });
+        tx.value.exportCSV(null, _transactions);
     });
 }
 
-function toggleMenuItem(data, name) {
-    if (name.toLowerCase() == 'download') console.log(name);
-    if (name.toLowerCase() == 'details') showDetails(data);
+function showMenu(evt, _data) {
+    menu.value.hide();
+    data.txDetails.selected = _data.id;
+    data.txDetails.tx = _data;
+
+    nextTick(() => {
+        menu.value.show(evt);
+    });
 }
 
-function showDetails(data) {
-    console.log('this data will be shown', data);
+async function _sort(_data) {
+    data.pagination.sort = _data.sortField ?? 'Date_Created';
+    data.pagination.direction = _data.sortOrder <= 0 ? 'desc' : 'asc';
+    data.pagination.page = 0;
+    data.pagination.first = 0;
+    await fetchTransaction();
 }
 
 const openPopOver = (event, data) => {
@@ -159,65 +234,75 @@ const openPopOver = (event, data) => {
 </script>
 
 <template>
-    <Skeleton v-if="preLoader" width="100%" height="65vh"></Skeleton>
-    <div v-else class="card">
-        <div class="font-semibold text-xl mb-4">Transactions</div>
+    <div class="card">
+        <div class="font-semibold text-xl p-2 pl-4 mb-4 bg-slate-200 rounded-md">{{ useRoute().name }}</div>
 
+        <Skeleton v-if="preLoader" width="100%" height="65vh"></Skeleton>
         <DataTable
+            v-else
             striped-rows
             removable-sort
             :export-filename="dFilename"
             exportHeader="San Jose, Batangas LGU Transaction"
             exportFooter="San Jose, Batangas LGU Transaction"
             ref="tx"
-            class="footer-bg-none"
+            class="footer-bg-none border-x-2"
             dataKey="id"
-            tableStyle="min-width: 100%"
             :loading="isLoading"
             :value="transactions"
             :rows="data.pagination.length"
             :rows-per-page-options="[5, 10, 20]"
-            :globalFilterFields="['id', 'Trans_Id', 'Categories', 'Convenience_Fee', 'Total_Amount', 'Status', 'Transaction_Date', 'Settle_Date']"
-            :sort-order="-1"
-            @update:sorfField="(a) => console.log(a)"
-            @update:sorfOrder="(a) => console.log(a)"
+            :globalFilterFields="['id', 'Trans_Id', 'Categories', 'Penalties', 'Total_Amount', 'Status', 'Transaction_Date', 'updated_at']"
+            @sort="_sort"
         >
             <template #empty>No transaction data found.</template>
             <template #loading>Preparing transaction data. Please wait.</template>
             <template #header>
-                <div class="flex justify-between bg-white-900">
-                    <div style="text-align: left">
-                        <Button class="xl:!text-lg" size="small" icon="pi pi-external-link" label="Export" @click="tx.exportCSV(null, transactions.value)" />
+                <div class="flex md:flex-row flex-col justify-between bg-white-900">
+                    <div style="text-align: left" class="mb:mb-0 mb-2">
+                        <Button class="2xl:!text-lg" size="small" icon="pi pi-external-link" label="Export" @click="exportData" />
                     </div>
-                    <IconField>
+                    <InputGroup class="md:!w-2/5 w-full">
+                        <InputText placeholder="Keyword" @keyup.enter="searchTx" v-model="data.filter" />
+                        <Button label="Search" @click="searchTx" />
+                    </InputGroup>
+                    <!-- <IconField>
                         <InputIcon>
                             <i class="pi pi-search" />
                         </InputIcon>
                         <InputText v-model="data.filter" placeholder="Keyword Search" />
-                    </IconField>
+                    </IconField> -->
                 </div>
             </template>
-            <Column sortable field="id" header="Reference No.">
-                <template #body="{ data }">{{ data.id }}</template>
-            </Column>
-            <Column field="Trans_Id" header="Transaction No.">
+
+            <Column field="Trans_Id" header="Transaction No." frozen>
                 <template #body="{ data }">{{ data.Trans_Id }}</template>
             </Column>
-            <Column field="Categories" header="Criterias">
-                <template #body="{ data }"><Button class="xl:!text-lg" size="small" severity="info" label="Show" text @click="openPopOver($event, data)" /></template>
+            <Column field="Reference_No" header="Reference No.">
+                <template #body="{ data }">{{ data.Reference_No }}</template>
             </Column>
-            <Column field="Sub_Amount" header="Sub-Amount" class="!text-right" sortable>
+            <Column field="Name" header="Name">
+                <template #body="{ data }">{{ data.Name ?? '-' }}</template>
+            </Column>
+            <Column field="Company" header="Company">
+                <template #body="{ data }">{{ data.Company ?? '-' }}</template>
+            </Column>
+            <Column field="Categories" header="Categories">
+                <template #body="{ data }"><Button class="2xl:!text-lg" size="small" severity="info" label="Show" text @click="openPopOver($event, data)" /></template>
+            </Column>
+            <Column field="Sub_Amount" header="Sub-Amount" class="!text-right">
                 <template #body="slotProps">{{ formatCurrency(slotProps.data.Sub_Amount) }}</template>
             </Column>
-            <Column field="Convenience_Fee" header="Convenience Fee" class="!text-right" sortable>
-                <template #body="slotProps">{{ formatCurrency(slotProps.data.Convenience_Fee) }}</template>
+            <Column field="Penalties" header="Convenience Fee" class="!text-right">
+                <template #body="slotProps">{{ formatCurrency(slotProps.data.Penalties) }}</template>
             </Column>
-            <Column field="Total_Amount" header="Total Amount" class="!text-right" sortable>
+            <Column field="Total_Amount" header="Total Amount" class="!text-right">
                 <template #body="slotProps">{{ formatCurrency(slotProps.data.Total_Amount) }}</template>
             </Column>
             <Column field="Status" header="Status">
                 <template #body="{ data }">
                     <Tag
+                        class="select-none"
                         :value="data.Status.toLowerCase() == 'created' ? 'pending' : data.Status.toLowerCase()"
                         :severity="getStatus(data.Status.toUpperCase())"
                         :style="{
@@ -226,28 +311,28 @@ const openPopOver = (event, data) => {
                     />
                 </template>
             </Column>
-            <Column sortable field="Transaction_Date" header="Transaction Date">
-                <template #body="{ data }">{{ formatDate(data.Transaction_Date) }}</template>
+            <Column sortable field="Date_Created" header="Transaction Date" frozen checked>
+                <template #body="{ data }">{{ data.Date_Created }}</template>
             </Column>
-            <Column sortable field="Settle_Date" header="Settled Date">
-                <template #body="{ data }">{{ formatDate(data.Settle_Date) }}</template>
+            <Column sortable field="updated_at" header="Settled Date">
+                <template #body="{ data }">{{ data.updated_at }}</template>
             </Column>
             <Column>
                 <template #body="{ data }">
                     <Menu ref="menu" :model="overlayMenuItems" :popup="true" class="!min-w-44">
                         <template #item="_data">
-                            <div class="cursor-pointer" @click.prevent="toggleMenuItem(data, _data.label)">
+                            <div class="cursor-pointer" @click.prevent="toggleMenuItem(_data.label)">
                                 <i :class="_data.item.icon" class="p-3 px-4"></i>
                                 {{ _data.item.label }}
                             </div>
                         </template>
                     </Menu>
-                    <Button class="xl:!text-lg" size="small" type="button" label="Actions" icon="pi pi-angle-down" icon-pos="right" @click="menu.show($event)" style="width: auto" />
+                    <Button class="2xl:!text-lg" size="small" type="button" label="Action" icon="pi pi-angle-down" icon-pos="right" @click="showMenu($event, data)" style="width: auto" />
                 </template>
             </Column>
             <template #footer class="!p-0">
                 <Paginator
-                    :ref="data.pagination.totalCount + data.pagination.page"
+                    ref="paginator"
                     :class="{
                         'pointer-events-none opacity-60': isLoading
                     }"
@@ -255,17 +340,52 @@ const openPopOver = (event, data) => {
                     template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink JumpToPageDropdown RowsPerPageDropdown"
                     @page="paginate"
                     currentPageReportTemplate="Showing {first} to {last} of {totalRecords}"
-                    :first="data.pagination.first"
+                    v-model:first="data.pagination.first"
                     :rows="data.pagination.length"
                     :totalRecords="data.pagination.totalCount"
                     :rowsPerPageOptions="[10, 20, 30]"
                     :active="false"
                     :disabled="isLoading"
-                    :always-show="false"
-            /></template>
+                />
+            </template>
         </DataTable>
 
-        <Popover ref="popover">{{ poData.Categories }}</Popover>
+        <Dialog v-model:visible="data.txDetails.show" no-header modal :draggable="false" :closable="false">
+            <Card class="md:w-[50rem] lg:w-[60rem] w-[23rem] !border">
+                <template #title class="grid grid-rows-2 !text-base">
+                    <div class="px-10 text-base">
+                        <div>Tx. Reference: <Chip :label="data.txDetails.tx.Reference_No" /></div>
+                        <div class="grid grid-cols-2 mt-5 gap-1">
+                            <div>RCPT Name: <Chip :label="data.txDetails.tx.Reference_No" /></div>
+                            <div class="text-right">RCPT Company: <Chip :label="data.txDetails.tx.Reference_No" /></div>
+                        </div>
+                    </div>
+                </template>
+                <template #content>
+                    <TransactionDetails :items="data.txDetails.tx.items ?? []" :sub-total="data.txDetails.tx.Sub_Amount" :total="data.txDetails.tx.Total_Amount" :fee="data.txDetails.tx.Penalties" />
+                </template>
+                <template #footer>
+                    <div class="flex justify-end gap-2">
+                        <Button
+                            type="button"
+                            label="Close"
+                            severity="secondary"
+                            @click="
+                                () => {
+                                    data.txDetails.show = false;
+                                }
+                            "
+                        ></Button>
+                    </div>
+                </template>
+            </Card>
+        </Dialog>
+
+        <Popover ref="popover">
+            <div class="flex flex-wrap justify-center gap-3 max-w-[28rem]">
+                <Chip v-for="_category of poData.Categories" :label="_category.Category_Name" />
+            </div>
+        </Popover>
     </div>
 </template>
 

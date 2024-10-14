@@ -1,6 +1,8 @@
 import AppLayout from '@/layout/AppLayout.vue';
 import { createRouter, createWebHistory } from 'vue-router';
 
+const user_data = !['', 'null', '{}'].includes(document.cookie) ? JSON.parse(document.cookie) : null;
+
 const router = createRouter({
     history: createWebHistory(),
     routes: [
@@ -15,7 +17,7 @@ const router = createRouter({
                 },
                 {
                     path: '/dashboard',
-                    name: 'dashboard',
+                    name: 'Dashboard',
                     component: () => import('@/views/Dashboard.vue')
                 },
                 {
@@ -24,13 +26,13 @@ const router = createRouter({
                     component: () => import('@/views/CreateTransaction/index.vue')
                 },
                 {
-                    path: '/criterias',
-                    name: 'Criterias',
+                    path: '/category',
+                    name: 'Category',
                     component: () => import('@/views/Criterias/index.vue')
                 },
                 {
-                    path: '/users',
-                    name: 'Users',
+                    path: '/accounts',
+                    name: 'Accounts',
                     component: () => import('@/views/Users/index.vue')
                 },
                 {
@@ -40,7 +42,7 @@ const router = createRouter({
                 },
                 {
                     path: '/transactions',
-                    name: 'transactions',
+                    name: 'Transactions',
                     component: () => import('@/views/Transactions/index.vue')
                 }
                 // {
@@ -157,23 +159,32 @@ const router = createRouter({
 });
 
 router.beforeEach((to, from, next) => {
-    if (!['', 'null', '{}'].includes(document.cookie)) {
-        if (to.fullPath == '/') {
-            next({ name: 'dashboard' });
-            return;
-        }
-        if (!to.name || to.name == 'notfound') {
-            document.body.classList.remove('preparing-content');
-            if (!to.name) next({ name: 'notfound' });
+    try {
+        if (user_data) {
+            if (to.fullPath == '/') {
+                next({ name: 'dashboard' });
+                return;
+            }
+            if (!to.name || to.name == 'notfound') {
+                if (!to.name) next({ name: 'notfound' });
+                next();
+                return;
+            }
+            router.options.routes.forEach((route) => {
+                if (!route.name) return;
+                if (route.path == to.path) document.body.classList.remove('preparing-content');
+            });
             next();
             return;
         }
+        if (to.fullPath != '/') {
+            next({ name: 'login' });
+            return;
+        }
         next();
-        return;
+    } catch (error) {
+        next({ name: 'dashboard' });
+    } finally {
     }
-    if (to.fullPath != '/') {
-        next({ name: 'login' });
-    }
-    next();
 });
 export default router;

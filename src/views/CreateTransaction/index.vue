@@ -10,7 +10,7 @@
             <StepPanels>
                 <StepPanel :value="1" class="grid gap-4">
                     <div class="flex place-content-end mt-2 mb-5">
-                        <Button :disabled="data.isLoading" label="Add Item" icon="pi pi-plus" class="h-10 w-auto" @click="data.showCriteriaModal = true"></Button>
+                        <Button :disabled="data.isLoading || data.addButtonState" label="Add Item" icon="pi pi-plus" class="h-10 w-auto" @click="data.showCriteriaModal = true" :loading="data.addButtonState"></Button>
                     </div>
                     <div v-if="!items.length" class="card flex flex-col place-items-center flex-center w-full bg-slate-200">No Item</div>
                     <div v-else>
@@ -38,8 +38,8 @@
                                                 placeholder="0.00"
                                                 inputId="locale-user"
                                                 @update:modelValue="anAmountChange($event, item)"
-                                                :disabled="item.isFixedAmount || data.isLoading"
-                                                :readonly="item.isFixedAmount || data.isLoading"
+                                                :disabled="!!item.isFixedAmount || !!data.isLoading"
+                                                :readonly="!!item.isFixedAmount || !!data.isLoading"
                                                 :minFractionDigits="2"
                                                 :maxFractionDigits="2"
                                                 class="currency border-0 border-b-1"
@@ -65,7 +65,7 @@
                             </div>
                             <div class="grid grid-cols-3 gap-2">
                                 <div class="flex lg:col-start-2 col-start-1 gap-2 place-content-end">
-                                    <label for="penalty" class="leading-10 text-md">Convenience Fee (1.8%)</label>
+                                    <label for="penalty" class="leading-10 text-md">Convenience Fee</label>
                                 </div>
                                 <div class="flex lg:col-start-3 col-start-2 col-span-2 gap-2 place-content-end">
                                     <InputGroup class="penalty">
@@ -93,6 +93,21 @@
                     </div>
                 </StepPanel>
                 <StepPanel :value="2">
+                    <Fieldset class="!mb-4 w-11/12 !mx-auto">
+                        <template #legend> Recipient </template>
+                        <Fluid>
+                            <div class="grid md:grid-cols-2 m-md:grid-rows-2 gap-4">
+                                <div>
+                                    <span class="font-bold mb-2 block">Name</span>
+                                    <InputText v-model="data.recipient.name.value" :loading="data.isLoading" :invalid="data.recipient.name.invalid" @update:modelValue="(e) => (data.recipient.name.invalid = !e)" />
+                                </div>
+                                <div>
+                                    <span class="font-bold mb-2 block">Company</span>
+                                    <InputText v-model="data.recipient.company.value" :loading="data.isLoading" :invalid="data.recipient.company.invalid" @update:modelValue="(e) => (data.recipient.company.invalid = !e)" />
+                                </div>
+                            </div>
+                        </Fluid>
+                    </Fieldset>
                     <TransactionDetails :items="items" :sub-total="subTotal" :total="computedTotal" :fee="convenienceFee" />
                     <div class="flex justify-end gap-2 flex-col sm:flex-row flex-col-reverse">
                         <Button type="button" label="Back" severity="secondary" @click="data.step--"></Button>
@@ -101,6 +116,15 @@
                 </StepPanel>
 
                 <StepPanel :value="3">
+                    <div class="w-11/12 !mx-auto mb-3">
+                        Reference No.: <Message severity="secondary"> {{ data.finishedTx.refNo ?? 'John Doe' }}</Message>
+                    </div>
+                    <Fieldset class="!mb-4 w-11/12 !mx-auto">
+                        <template #legend> Recipient </template>
+                        <Fluid>
+                            Name: <Message severity="secondary">{{ data.finishedTx.name ?? 'John Doe' }}</Message> Company: <Message severity="secondary">{{ data.finishedTx.company ?? 'XXX Corp. Inc.' }}</Message>
+                        </Fluid>
+                    </Fieldset>
                     <TransactionDetails v-if="data.step == 3" :items="data.finishedTx.items" :sub-total="data.finishedTx.subTotal" :total="data.finishedTx.computedTotal" :fee="data.finishedTx.convenienceFee" />
                     <QRCodeComponent
                         v-if="data.step == 3"
@@ -116,15 +140,15 @@
                 <div class="w-full md:w-4/5" v-if="data.customCriteria.custom">
                     <InputText class="w-full" id="customName" placeholder="Name" @keyup.enter="addCriteria" v-model="data.customCriteria.name" />
                 </div>
-                <Select v-else id="criteria" v-model="data.dropdownItem" :options="dropdownItems" optionLabel="name" placeholder="Select Item" class="w-full md:w-4/5"></Select>
-                <Button
+                <Select v-else id="criteria" v-model="data.dropdownItem" :options="data.dropdownItems" optionLabel="Category_Name" placeholder="Select Item" class="w-full"></Select>
+                <!-- <Button
                     type="button"
                     :label="data.customCriteria.custom ? 'Options' : 'Custom'"
                     :icon="`pi ${data.customCriteria.custom ? 'pi-folder-open' : 'pi-file-edit'}`"
                     severity="info"
                     @click="data.customCriteria.custom = !data.customCriteria.custom"
                     class="w-auto"
-                ></Button>
+                ></Button> -->
             </div>
             <div class="flex justify-end gap-2">
                 <Button type="button" label="Cancel" severity="secondary" @click="onCriteriaVisibility"></Button>
@@ -149,7 +173,7 @@
                     <p class="col-start-3 text-right xl:text-xl pr-2">{{ subTotal == 0 ? '0.00' : formatCurrency(subTotal) }}</p>
                 </div>
                 <div class="grid space-between">
-                    <p class="col-start-1 pl-3 xl:text-xl text-teal-800">Convenience Fee (1.8%)</p>
+                    <p class="col-start-1 pl-3 xl:text-xl text-teal-800">Convenience Fee</p>
                     <p class="col-start-3 text-right xl:text-xl text-teal-800 pr-2">{{ convenienceFee == 0 ? '0.00' : formatCurrency(convenienceFee) }}</p>
                 </div>
                 <Divider class="!m-1" />
@@ -168,10 +192,11 @@
 <script setup>
 import QRCodeComponent from '@/components/QRCodeComponent.vue';
 import TransactionDetails from '@/components/TransactionDetails.vue';
-import { useToast } from 'primevue/usetoast';
-import { computed, nextTick, onMounted, reactive, ref } from 'vue';
+import { CategoryService } from '@/service/CategoryService';
+import { TransactionService } from '@/service/TransactionService';
+import { computed, inject, nextTick, onMounted, reactive, ref } from 'vue';
 
-const toast = useToast();
+const toast = inject('toast');
 const data = reactive({
     showCriteriaModal: false,
     showSummarizeTransactionModal: false,
@@ -179,21 +204,24 @@ const data = reactive({
     isLoading: false,
     customCriteria: { custom: false, name: '' },
     step: 1,
-    finishedTx: { item: [], computedTotal: 0, convenienceFee: 0, subTotal: 0 }
+    finishedTx: { item: [], computedTotal: 0, convenienceFee: 0, subTotal: 0 },
+    addButtonState: true,
+    recipient: { name: { value: '', invalid: false }, company: { value: '', invalid: false } },
+    dropdownItems: [
+        { id: 1, amount: 0, name: 'Criteria 1' },
+        { id: 1, amount: 0, name: 'Criteria 2' },
+        { id: 1, amount: 500, name: 'Criteria 3' },
+        { id: 1, amount: 0, name: 'Criteria 4' },
+        { id: 1, amount: 0, name: 'Criteria 5' }
+    ]
 });
-const dropdownItems = [
-    { id: 1, amount: 0, name: 'Criteria 1' },
-    { id: 1, amount: 0, name: 'Criteria 2' },
-    { id: 1, amount: 500, name: 'Criteria 3' },
-    { id: 1, amount: 0, name: 'Criteria 4' },
-    { id: 1, amount: 0, name: 'Criteria 5' }
-];
 const items = ref([]);
 const finishedTx = ref({ item: [], computedTotal: 0, convenienceFee: 0, subTotal: 0 });
 let subTotal = computed(() => {
     let total = 0;
+    console.log(items.value.reduce((total, value) => (total += parseFloat(value.amount)), 0));
     for (let item of items.value) total = total + (item.amount ? item.amount : 0);
-    return total;
+    return parseFloat(total);
 });
 const convenienceFee = computed(() => 0.018 * subTotal.value);
 const computedTotal = computed(() => convenienceFee.value + subTotal.value);
@@ -204,7 +232,7 @@ async function addCriteria() {
         if (!data.customCriteria.name) {
             await nextTick();
             document.getElementById('customName').focus();
-            showToast('Error', 'Input the custom item name.');
+            toast.add('Error', 'Input the custom item name.');
             return;
         }
         item = {
@@ -216,34 +244,86 @@ async function addCriteria() {
         if (!data.dropdownItem) {
             await nextTick();
             document.querySelector('#criteria .p-select-dropdown').click();
-            showToast('Error', 'Select a critera.');
+            toast.add('Error', 'Select a critera.');
             return;
         }
+
         item = {
             code: data.dropdownItem.id,
-            name: data.dropdownItem.name,
-            amount: data.dropdownItem.amount ? data.dropdownItem.amount : null,
-            isFixedAmount: !!data.dropdownItem.amount
+            name: data.dropdownItem.Category_Name,
+            amount: data.dropdownItem.Amount ? data.dropdownItem.Amount : null,
+            isFixedAmount: data.dropdownItem.Is_Fix
         };
-        if (item.isFixedAmount) item['fixedAmount'] = data.dropdownItem.amount;
+        if (data.dropdownItem.Is_Fix) item['fixedAmount'] = data.dropdownItem.Amount;
     }
     items.value.unshift(item);
     data.customCriteria.custom = false;
     onCriteriaVisibility();
 }
 
-function showToast(serverity, message, summary = null) {
-    const capitalize = () => {
-        return serverity.charAt(0).toUpperCase() + serverity.slice(1);
-    };
-    toast.add({ severity: serverity.toLowerCase(), summary: summary ?? capitalize(), detail: message, life: 3000 });
-}
-
 async function createTransaction() {
-    data.isLoading = true;
-    let settledAllAmount = true;
+    const { name, company } = data.recipient;
+
+    if (!name.value.length || !company.value.length) {
+        let field = [];
+        if (!name.value.length) {
+            field.push('Name');
+            name.invalid = true;
+        }
+        if (!company.value.length) {
+            field.push('Company');
+            company.invalid = true;
+        }
+        toast.add('warn', `Recipient ${field.join(' and ')} are required`);
+        return;
+    }
 
     const Date_Created = formatDateForQuery(new Date());
+    data.isLoading = true;
+
+    try {
+        const res = await TransactionService.createTransaction({
+            Name: data.recipient.name.value,
+            Company: data.recipient.company.value,
+            Categories: items.value.map((item) => item.code).join(','),
+            Sub_Amount: subTotal.value,
+            Total_Amount: computedTotal.value,
+            Date_Created
+        });
+        if (res.status != 200) throw false;
+
+        toast.add('success', 'Transaction created successfully.');
+        data.finishedTx = {
+            refNo: res.data.Reference_No,
+            name: data.recipient.name.value,
+            company: data.recipient.company.value,
+            items: items.value,
+            subTotal: subTotal.value,
+            convenienceFee: convenienceFee.value,
+            computedTotal: computedTotal.value
+        };
+        data.step++;
+        data.isLoading = false;
+        data.showSummarizeTransactionModal = false;
+        items.value = [];
+        [data.recipient.name, data.recipient.company] = [
+            { value: '', invalid: false },
+            { value: '', invalid: false }
+        ];
+    } catch (error) {
+        console.log(error);
+        toast.add('error', 'Transaction creation unsuccessfully.');
+        data.isLoading = false;
+    }
+    // }
+}
+
+function reviewTransaction() {
+    let settledAllAmount = true;
+    if (!items.value.length) {
+        toast.add('error', 'No item listed.');
+        return;
+    }
 
     for (let item of items.value) {
         if (!settledAllAmount) continue;
@@ -252,39 +332,7 @@ async function createTransaction() {
 
     if (!settledAllAmount) {
         data.isLoading = false;
-        showToast('Info', 'Fill all amount field of each categories.');
-        return;
-    }
-
-    // const res = await TransactionService.createTransaction({ Trans_Id: '12312324', Categories: items.value.map((item) => item.code).join(','), Sub_Amount: subTotal.value, Total_Amount: computedTotal.value, Date_Created });
-    // if (res.status == 200) {
-    showToast('success', 'Transaction created successfully.');
-    finishedTx.value = {
-        refNo: '123124',
-        recepient: 'John Doe',
-        items: items.value,
-        subTotal: subTotal.value,
-        convenienceFee: convenienceFee.value,
-        computedTotal: computedTotal.value
-    };
-    data.finishedTx = {
-        refNo: '123124',
-        recepient: 'John Doe',
-        items: items.value,
-        subTotal: subTotal.value,
-        convenienceFee: convenienceFee.value,
-        computedTotal: computedTotal.value
-    };
-    data.step++;
-    data.isLoading = false;
-    data.showSummarizeTransactionModal = false;
-    items.value = [];
-    // }
-}
-
-function reviewTransaction() {
-    if (!items.value.length) {
-        showToast('error', 'No item listed.');
+        toast.add('warn', 'Fill all amount field of each categories.');
         return;
     }
     data.step++;
@@ -307,7 +355,7 @@ function onCriteriaVisibility() {
 }
 
 function anAmountChange(val, item) {
-    if (item.isFixedAmount) item.amount = item.fixedAmount;
+    if (item.isFixedAmount) item.amount = parseFloat(item.fixedAmount);
 }
 
 function formatCurrency(value) {
@@ -326,5 +374,26 @@ function formatDateForQuery(date) {
     return `${date.getFullYear()}-${date.getMonth().toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
 }
 
-onMounted(() => {});
+async function fetchCategories(method = null) {
+    try {
+        const res = await CategoryService.getAllCategory();
+
+        return res.map((data) => {
+            let _data = { ...data, created_at: data.created_at ? formatDate(new Date(data.created_at), true) : '', updated_at: data.updated_at ? formatDate(new Date(data.updated_at), true) : '' };
+            return _data;
+        });
+    } catch (error) {
+        toast.add('error', 'Error occured while fetching category items. Please check if you are connected to internet.');
+        return [];
+    }
+}
+
+onMounted(async () => {
+    // data.dropdownItems = await fetchCategories();
+
+    nextTick(async () => {
+        data.dropdownItems = await fetchCategories();
+        data.addButtonState = false;
+    });
+});
 </script>
