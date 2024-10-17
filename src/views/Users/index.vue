@@ -16,7 +16,7 @@
             tableStyle="min-width: 100%"
             sort-field="last_login"
             :loading="isLoading"
-            :value="accounts"
+            :value="accounts.data"
             :rows="data.pagination.length"
             :rows-per-page-options="[5, 10, 20]"
             :filters="data.filter"
@@ -295,7 +295,7 @@ function toggleMenuItem(name) {
     if (name.toLowerCase() == 'download') console.log(name);
     if (name.toLowerCase() == 'edit') {
         const { register, id } = data.addUser;
-        const { Email, Status, UserType } = accounts.value.find((acct) => acct.id == id);
+        const { Email, Status, UserType } = accounts.value.data.find((acct) => acct.id == id);
         data.addUser = { ...data.addUser, register: { ...register, email: Email, status: Status, usertype: UserType }, isEdit: true, show: true };
     }
 }

@@ -1,0 +1,115 @@
+<html>
+    <head>
+        <title>Printable Document</title>
+    </head>
+    <body>
+        <style>
+            .container {
+                width: 99%;
+                height: 90vh;
+                display: grid;
+                gap: 5px;
+
+                grid-template:
+                    'head head' 10%
+                    'bd sum' 50%
+                    'bd qr' 30%
+                    'foot foot' 10%;
+            }
+            header,
+            break-down,
+            summation,
+            footer,
+            QR,
+            outlets {
+                width: 100%;
+                height: 100%;
+                border: 1px solid #000000;
+                position: relative;
+            }
+            header {
+                grid-area: head;
+            }
+            footer {
+                grid-area: foot;
+            }
+            summation {
+                grid-area: sum;
+            }
+            break-down {
+                grid-area: bd;
+            }
+            QR {
+                grid-area: qr;
+            }
+            outlets {
+                grid-area: outlets;
+            }
+
+            break-down {
+                display: flex;
+                flex-direction: column;
+            }
+
+            item {
+                display: flex;
+                flex-direction: row;
+                justify-content: space-between;
+                padding: 0 1rem 0 1rem;
+            }
+
+            .item,
+            .amount {
+                padding-top: 1rem;
+            }
+
+            .amount,
+            .amount-header {
+                padding-left: 1rem;
+            }
+
+            .item,
+            .item-header {
+                padding-right: 1rem;
+            }
+
+            item:first-child {
+                padding-top: 1rem;
+                padding-bottom: 0.5rem;
+                background-color: #6088b430;
+            }
+            QR {
+                display: flex;
+                justify-content: space-around;
+            }
+            svg {
+                width: 120px;
+            }
+        </style>
+        <div class="container">
+            <header></header>
+            <break-down>
+                <item>
+                    <span>Item(s)</span>
+                    <span>Amount(P)</span>
+                </item>
+                <item>
+                    <span class="item">Barangay Clearance</span>
+                    <span class="amount">350.00</span>
+                </item>
+                <item>
+                    <span class="item">Business Permit</span>
+                    <span class="amount">1,000.00</span> </item
+                ><item>
+                    <span class="item">Other Fee</span>
+                    <span class="amount">580.00</span>
+                </item>
+            </break-down>
+            <summation></summation>
+            <QR>
+                <div>123</div><div>12324</div>
+            </QR>
+            <footer></footer>
+        </div>
+    </body>
+</html>

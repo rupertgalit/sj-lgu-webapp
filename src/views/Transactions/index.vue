@@ -1,6 +1,7 @@
 <script setup>
 import TransactionDetails from '@/components/TransactionDetails.vue';
 import { formatCurrency, formatDate } from '@/helper';
+import PrintPlugin from '@/helper/print';
 import { CategoryService } from '@/service/CategoryService';
 import { TransactionService } from '@/service/TransactionService';
 import { inject, nextTick, onMounted, reactive, ref } from 'vue';
@@ -36,12 +37,14 @@ const overlayMenuItems = ref([
         separator: true
     },
     {
-        label: 'Download',
-        icon: 'pi pi-download'
+        label: 'Payment Info',
+        icon: 'pi pi-print',
+        code: 'print'
     },
     {
         label: 'Details',
-        icon: 'pi pi-file'
+        icon: 'pi pi-file',
+        code: 'detail'
     }
 ]);
 const transactions = ref([
@@ -159,11 +162,140 @@ onMounted(async () => {
     data.categories = await CategoryService.getAllCategory();
     await fetchTransaction();
     preLoader.value = false;
+    const css = `
+    <style>
+     .container {
+                width: 99%;
+                height: 60rem;
+                border: 1px solid #00000010;
+                display: grid;
+                gap: 5px;
+                grid-template:
+                    'head head' 10%
+                    'bd sum' 50%
+                    'bd qr' 29%
+                    'foot foot' 10%;
+            }
+            header,
+            break-down,
+            summation,
+            footer,
+            QR,
+            outlets {
+                overflow: hidden;
+                border: 1px solid #00000030;
+            }
+            header {
+                grid-area: head;
+            }
+            footer {
+                grid-area: foot;
+            }
+            summation {
+                grid-area: sum;
+            }
+            break-down {
+                grid-area: bd;
+            }
+            QR {
+                grid-area: qr;
+            }
+            outlets {
+                grid-area: outlets;
+            }
+
+            break-down {
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+            }
+
+            item {
+                display: flex;
+                flex-direction: row;
+                justify-content: space-between;
+                padding: 0 1rem 0 1rem;
+            }
+
+            .item,
+            .amount {
+                padding-top: 1rem;
+            }
+
+            .amount,
+            .amount-header {
+                padding-left: 1rem;
+            }
+
+            .item,
+            .item-header {
+                padding-right: 1rem;
+            }
+
+            item:first-child{
+                padding-top: 1rem;
+                padding-bottom: .5rem;
+                background-color: #6088b4;
+            }
+
+
+            QR {
+                display: flex;
+                justify-content: space-around;
+                align-items: center;
+            }
+            svg {
+                width: 120px
+            }
+
+            @print {
+                @page :footer, @page :header {
+                    display: none
+                }
+            }
+
+    </style>
+    `;
+    PrintPlugin.print(
+        css +
+            `<div class="container">
+        <header>Payment Information</header>
+        <break-down>
+            <item>
+                <span>Item(s)</span>
+                <span>Amount(P)</span>
+            </item>
+            <item>
+                <span class="item">Barangay Clearance</span>
+                <span class="amount">350.00</span>
+            </item>
+            <item>
+                <span class="item">Business Permit</span>
+                <span class="amount">1,000.00</span>
+            </item><item>
+                <span class="item">Other Fee</span>
+                <span class="amount">580.00</span>
+            </item>
+        </break-down>
+        <summation>
+
+        </summation>
+        <QR>
+            <div>jkyasdi</div>
+            ${PrintPlugin.makeQR('ashjdloj0sd.asdasdaspijdfa09a;f.@.sdfsdikjf9u@./@/.sdoihjasd987opij')}
+        </QR>
+        <footer></footer>
+
+        </div>`
+    );
 });
 
-function toggleMenuItem(name) {
-    if (name.toLowerCase() == 'download') console.log(name);
-    if (name.toLowerCase() == 'details') data.txDetails.show = true;
+function toggleMenuItem(_data) {
+    console.log(_data);
+    if (_data.code == 'print') {
+        console.log(_data.code);
+    }
+    if (_data.code == 'detail') data.txDetails.show = true;
 }
 
 function showDetails(_data) {}
@@ -320,10 +452,10 @@ const openPopOver = (event, data) => {
             <Column>
                 <template #body="{ data }">
                     <Menu ref="menu" :model="overlayMenuItems" :popup="true" class="!min-w-44">
-                        <template #item="_data">
-                            <div class="cursor-pointer" @click.prevent="toggleMenuItem(_data.label)">
-                                <i :class="_data.item.icon" class="p-3 px-4"></i>
-                                {{ _data.item.label }}
+                        <template #item="{ item }">
+                            <div class="cursor-pointer" @click.prevent="toggleMenuItem(item)">
+                                <i :class="item.icon" class="p-3 px-4"></i>
+                                {{ item.label }}
                             </div>
                         </template>
                     </Menu>
@@ -353,7 +485,7 @@ const openPopOver = (event, data) => {
         <Dialog v-model:visible="data.txDetails.show" no-header modal :draggable="false" :closable="false">
             <Card class="md:w-[50rem] lg:w-[60rem] w-[23rem] !border">
                 <template #title class="grid grid-rows-2 !text-base">
-                    <div class="px-10 text-base">
+                    <div class="px-12 text-base">
                         <div>Tx. Reference: <Chip :label="data.txDetails.tx.Reference_No" /></div>
                         <div class="grid grid-cols-2 mt-5 gap-1">
                             <div>RCPT Name: <Chip :label="data.txDetails.tx.Reference_No" /></div>
